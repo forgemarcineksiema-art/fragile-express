@@ -65,6 +65,9 @@ export class Input {
   private readonly down = (e: PointerEvent): void => {
     if (!this.enabled || this.pointerId !== null) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // Buttons, selects and open screens handle their own input.
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button, select, .screen, .ad-overlay')) return;
     e.preventDefault();
     this.pointerId = e.pointerId;
     this.ox = this.cx = e.clientX;

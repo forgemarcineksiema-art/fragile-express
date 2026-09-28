@@ -260,6 +260,7 @@ export class Game {
 
   private togglePause(): void {
     if (this.state === 'play') this.openPause();
+    else if (this.state === 'pause') this.ui.pressPrimary();
   }
 
   private openPause(): void {

@@ -150,6 +150,11 @@ export class UI {
     this.screen.classList.add('on');
   }
 
+  /** Presses the green button of the open screen (keyboard resume from pause). */
+  pressPrimary(): void {
+    this.screen.querySelector<HTMLButtonElement>('.btn.green')?.click();
+  }
+
   close(): void {
     this.screenOpen = false;
     this.refreshScreen = null;
