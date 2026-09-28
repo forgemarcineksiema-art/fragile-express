@@ -42,7 +42,14 @@ export class Camera {
     return this.reveal !== null;
   }
 
+  private queue: { x: number; y: number }[] = [];
+
+  /** Pans to a point for a moment; reveals requested during another one play after it. */
   startReveal(x: number, y: number): void {
+    if (this.reveal) {
+      this.queue.push({ x, y });
+      return;
+    }
     this.reveal = { x, y, t: 0, fromX: this.x, fromY: this.y };
   }
 
@@ -64,6 +71,11 @@ export class Camera {
       } else if (r.t < 1.8) {
         this.x = r.x;
         this.y = r.y;
+        if (r.t + dt >= 1.8 && this.queue.length > 0) {
+          // Chain straight into the next reveal instead of returning to the player first.
+          const n = this.queue.shift()!;
+          this.reveal = { x: n.x, y: n.y, t: 0, fromX: this.x, fromY: this.y };
+        }
       } else if (r.t < 2.4) {
         const k = easeInOutQuad((r.t - 1.8) / 0.6);
         this.x = r.x + (fx - r.x) * k;
