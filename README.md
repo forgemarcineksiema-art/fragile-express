@@ -65,6 +65,7 @@ In `npm run dev` the console has `__dev`:
 - `__dev.go(x, y)` walks the player to a point, `__dev.wait(seconds)`,
 - `__dev.autoplay(seconds)` lets the pacing bot play the live game,
 - `__dev.location('hub', coins)` jumps to a location, `__dev.overview(0.4, x, y)` zooms out,
+- `__dev.thumbnails()` stages a scene and saves `promo/thumbnail_628.png` and `promo/screenshot.png`,
 - `__dev.reset()` wipes the save.
 
 Without the Poki SDK script (offline) the dev build simulates ads with a 1.5 s overlay; add `?mockads` to

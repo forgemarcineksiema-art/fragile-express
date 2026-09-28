@@ -99,11 +99,15 @@ export function installDevTools(game: Game): void {
     cam.snap(x, y);
     sim(0.05, null);
   };
+  const thumbnails = async (): Promise<string[]> => {
+    const { makeThumbnails } = await import('./promo.ts');
+    return makeThumbnails(game as unknown as import('./promo.ts').PromoHost);
+  };
   const reset = (): void => {
     g.writeSave = () => {};
     localStorage.removeItem(SAVE_KEY);
     location.reload();
   };
-  (window as unknown as { __dev: unknown; __game: Game }).__dev = { sim, go, wait, reset, snapshot, autoplay, location: gotoLocation, overview };
+  (window as unknown as { __dev: unknown; __game: Game }).__dev = { sim, go, wait, reset, snapshot, autoplay, location: gotoLocation, overview, thumbnails };
   (window as unknown as { __game: Game }).__game = game;
 }

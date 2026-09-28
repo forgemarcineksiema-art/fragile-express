@@ -1,6 +1,6 @@
 // Pooled particles and floating texts in world space.
 import { Container, Sprite, type Text } from 'pixi.js';
-import type { Atlas } from './atlas.ts';
+import { setTexture, type Atlas } from './atlas.ts';
 import { label } from './text.ts';
 
 interface Particle {
@@ -43,7 +43,7 @@ export class Fx {
 
   private sprite(tex: string, tint = 0xffffff): Sprite {
     const s = this.pool.pop() ?? new Sprite();
-    s.texture = this.atlas.get(tex);
+    setTexture(s, this.atlas.get(tex));
     s.tint = tint;
     s.alpha = 1;
     s.scale.set(1);

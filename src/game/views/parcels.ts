@@ -4,7 +4,7 @@ import { Graphics, Sprite, type Container } from 'pixi.js';
 import type { Parcel } from '../../sim/types.ts';
 import type { Warehouse } from '../../sim/warehouse.ts';
 import { PARCEL, PARCEL_XXL } from '../art.ts';
-import type { Atlas } from '../atlas.ts';
+import { setTexture, type Atlas } from '../atlas.ts';
 import { parcelTex } from '../textures.ts';
 import { HANDS_Z, type CharacterView } from './character.ts';
 import { BELT_H, type DockView, type ShelfView } from './stations.ts';
@@ -130,13 +130,13 @@ export class ParcelLayer {
       const tex = parcelTex(p.district, p.kind, p.sorted);
       if (!v) {
         const s = this.sprite();
-        s.texture = this.atlas.get(tex);
+        setTexture(s, this.atlas.get(tex));
         v = { sprite: s, hop: p.hop, tex, x: tg.x, y: tg.y, z: tg.z, fly: null };
         this.views.set(p.id, v);
       }
       if (v.tex !== tex) {
         v.tex = tex;
-        v.sprite.texture = this.atlas.get(tex);
+        setTexture(v.sprite, this.atlas.get(tex));
       }
       if (v.hop !== p.hop) {
         v.hop = p.hop;

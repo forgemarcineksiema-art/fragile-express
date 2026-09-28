@@ -1,5 +1,12 @@
 // Builds one texture atlas from vector drawing callbacks, so every sprite shares a GPU texture and batches.
-import { Graphics, Rectangle, Texture, type Renderer } from 'pixi.js';
+import { Graphics, Rectangle, Texture, type Renderer, type Sprite } from 'pixi.js';
+
+/** Assigns a texture and its default anchor (Pixi only applies defaultAnchor in the Sprite constructor). */
+export function setTexture(sprite: Sprite, tex: Texture): void {
+  sprite.texture = tex;
+  const a = tex.defaultAnchor;
+  if (a) sprite.anchor.set(a.x ?? 0, a.y ?? 0);
+}
 
 export interface AtlasEntry {
   name: string;

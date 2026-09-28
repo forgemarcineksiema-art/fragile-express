@@ -185,7 +185,11 @@ export class WorldView {
     }
     g.clear();
     this.wobbleDrawn = true;
-    const top = this.stackTop(p.id);
+    // Follow the swaying top parcel so the bar stays on the stack.
+    const topParcel = p.stack[p.stack.length - 1];
+    const sway = topParcel ? this.parcels.position(topParcel.id) : null;
+    const base = this.stackTop(p.id);
+    const top = sway ? { x: sway.x, y: base.y } : base;
     const shake = w > 0.7 ? Math.sin(time * 50) * 2 * w : 0;
     const x = top.x + shake;
     const y = top.y - 16;

@@ -102,7 +102,8 @@ postawiłem za pierwszym pracownikiem, bo gracz zna już pętlę i ma monety na 
 - **Repozytorium Fragile Van.** Nie ma go na dysku, więc poki-kit (`src/poki`), kod vana i paczek
   (`src/game/art.ts`) oraz helpery (`src/core`) napisałem od nowa, bez zależności od gry, tak żeby dało się
   je przenieść. Po podaniu ścieżki podmienię rysowanie vana na to z Fragile Van dla spójności marki.
-- Miniatura statyczna i animowana (dni 21–24 harmonogramu).
+- Miniatura animowana. Statyczną wersję roboczą (`promo/thumbnail_628.png`) i zrzut ekranu
+  (`promo/screenshot.png`) generuje `__dev.thumbnails()` w `npm run dev`; ostateczną warto dopracować ręcznie.
 - Pomiar 60 FPS przy 4× spowolnieniu CPU w Chrome DevTools i test na prawdziwym telefonie.
 - Odsłuch dźwięków na urządzeniach: efekty są syntezowane, ale nie słyszałem ich na żywo.
 
