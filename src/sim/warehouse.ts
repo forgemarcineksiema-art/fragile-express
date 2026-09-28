@@ -221,12 +221,13 @@ export class Warehouse {
   private applyWorkerStats(w: Worker): void {
     const c = w.carrier;
     const r = w.role;
-    c.speed = workerSpeed(this.lvl(`${r}.speed`));
+    const bonus = this.loc.workers ?? {};
+    c.speed = workerSpeed(this.lvl(`${r}.speed`)) * (bonus.speed ?? 1);
     if (r === 'collector') {
       c.capacity = 0;
       c.coinCap = collectorTrip(this.lvl('collector.capacity'), this.loc.multiplier);
     } else {
-      c.capacity = workerCapacity(r, this.lvl(`${r}.capacity`));
+      c.capacity = workerCapacity(r, this.lvl(`${r}.capacity`)) + (bonus.capacity ?? 0);
     }
   }
 

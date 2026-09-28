@@ -27,12 +27,15 @@ export class Camera {
     this.bounds = { x, y, w, h };
   }
 
+  /** Development override (overview screenshots). */
+  fixedZoom: number | null = null;
+
   resize(w: number, h: number): void {
     this.viewW = w;
     this.viewH = h;
     let z = Math.sqrt((w * h) / VIEW_AREA);
     if (w / z < MIN_VIEW_W) z = w / MIN_VIEW_W;
-    this.zoom = z;
+    this.zoom = this.fixedZoom ?? z;
   }
 
   get revealing(): boolean {

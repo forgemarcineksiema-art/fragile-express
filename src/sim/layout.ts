@@ -74,6 +74,8 @@ export interface LocationJson {
   /** Parcels already loaded in the first van on a fresh start (shortens the first payout). */
   vanPreload: number;
   features: FeaturesJson;
+  /** Bigger depots have more experienced staff: extra carry capacity and a speed multiplier. */
+  workers?: { capacity?: number; speed?: number };
   belts: BeltJson[];
   /** Shelf centre per district, in district order. */
   shelves: [number, number][];
@@ -215,7 +217,14 @@ export function buildLayout(loc: LocationJson): Layout {
   const safeBody = centred(sx, sy, SAFE_BODY.w, SAFE_BODY.h);
   const safeZone = rect(sx - SAFE_ZONE.w / 2, safeBody.y + safeBody.h, SAFE_ZONE.w, SAFE_ZONE.h);
   const origin = { x: loc.office[0], y: loc.office[1] };
-  const office = rect(origin.x - 62, origin.y - 96, OFFICE_COL * 3 + 124, OFFICE_ROW * 2 + 150);
+  let cols = 4;
+  let rows = 3;
+  for (const p of loc.pads) {
+    if (!p.slot) continue;
+    cols = Math.max(cols, p.slot[0] + 1);
+    rows = Math.max(rows, p.slot[1] + 1);
+  }
+  const office = rect(origin.x - 62, origin.y - 96, OFFICE_COL * (cols - 1) + 124, OFFICE_ROW * (rows - 1) + 150);
   return {
     w,
     h,

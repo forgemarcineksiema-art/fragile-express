@@ -4,7 +4,8 @@
 import type { Game } from './game/game.ts';
 import { PlayerBot } from './sim/bot.ts';
 import { SAVE_KEY } from './sim/save.ts';
-import type { Warehouse } from './sim/warehouse.ts';
+import { getLocation } from './sim/locations.ts';
+import { Warehouse as WarehouseCtor, type Warehouse } from './sim/warehouse.ts';
 
 interface Intent {
   x: number;
@@ -78,11 +79,31 @@ export function installDevTools(game: Game): void {
     g.app.render();
     return snapshot();
   };
+  /** Jump straight to a location with optional coins (for visual checks). */
+  const gotoLocation = (id: string, coins = 0): Record<string, unknown> => {
+    const loc = getLocation(id);
+    const wh = new WarehouseCtor(loc, null);
+    wh.coins = coins;
+    (g as unknown as { enterLocation: (w: Warehouse) => void }).enterLocation(wh);
+    return sim(0.1, null);
+  };
+  /** Zoom the camera out around a world point (null restores normal zoom). */
+  const overview = (zoom: number | null, x = 0, y = 0): void => {
+    const cam = (g as unknown as { camera: { fixedZoom: number | null; zoom: number; resize: (w: number, h: number) => void; viewW: number; viewH: number; snap: (x: number, y: number) => void } }).camera;
+    cam.fixedZoom = zoom;
+    cam.resize(cam.viewW, cam.viewH);
+    if (zoom) {
+      g.wh.player.x = x;
+      g.wh.player.y = y;
+    }
+    cam.snap(x, y);
+    sim(0.05, null);
+  };
   const reset = (): void => {
     g.writeSave = () => {};
     localStorage.removeItem(SAVE_KEY);
     location.reload();
   };
-  (window as unknown as { __dev: unknown; __game: Game }).__dev = { sim, go, wait, reset, snapshot, autoplay };
+  (window as unknown as { __dev: unknown; __game: Game }).__dev = { sim, go, wait, reset, snapshot, autoplay, location: gotoLocation, overview };
   (window as unknown as { __game: Game }).__game = game;
 }

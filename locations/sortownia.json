@@ -1,0 +1,503 @@
+{
+  "id": "sortownia",
+  "name": "loc.sortownia",
+  "next": "hub",
+  "theme": "city",
+  "multiplier": 4,
+  "costScale": 4,
+  "size": [
+    1400,
+    1180
+  ],
+  "spawn": [
+    500,
+    690
+  ],
+  "startCoins": 500,
+  "districts": 4,
+  "startDistricts": 2,
+  "shelfCapacity": 20,
+  "vanPreload": 0,
+  "features": {
+    "fragileAt": null,
+    "fragileChance": 0.18,
+    "expressChance": 0.2,
+    "expressTime": 50,
+    "xxlChance": 0
+  },
+  "workers": {
+    "capacity": 1,
+    "speed": 1.15
+  },
+  "belts": [
+    {
+      "at": [
+        -40,
+        600
+      ],
+      "length": 480,
+      "interval": 1.2,
+      "speed": 170,
+      "maxItems": 14,
+      "preload": 8
+    }
+  ],
+  "shelves": [
+    [
+      760,
+      250
+    ],
+    [
+      760,
+      500
+    ],
+    [
+      760,
+      750
+    ],
+    [
+      760,
+      1000
+    ]
+  ],
+  "docks": [
+    250,
+    500,
+    750,
+    1000
+  ],
+  "office": [
+    120,
+    880
+  ],
+  "safe": [
+    120,
+    720
+  ],
+  "adSpots": [
+    [
+      1030,
+      625
+    ],
+    [
+      470,
+      380
+    ]
+  ],
+  "waypoints": [
+    [
+      640,
+      125
+    ],
+    [
+      880,
+      125
+    ],
+    [
+      640,
+      375
+    ],
+    [
+      880,
+      375
+    ],
+    [
+      640,
+      625
+    ],
+    [
+      880,
+      625
+    ],
+    [
+      640,
+      875
+    ],
+    [
+      880,
+      875
+    ],
+    [
+      640,
+      1115
+    ],
+    [
+      880,
+      1115
+    ],
+    [
+      1070,
+      375
+    ],
+    [
+      1070,
+      625
+    ],
+    [
+      1070,
+      875
+    ],
+    [
+      400,
+      420
+    ],
+    [
+      400,
+      800
+    ],
+    [
+      300,
+      640
+    ],
+    [
+      560,
+      820
+    ]
+  ],
+  "pads": [
+    {
+      "id": "p_cap",
+      "type": "upgrade",
+      "stat": "player.capacity",
+      "slot": [
+        0,
+        0
+      ],
+      "unlock": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "every": 2,
+      "max": 6
+    },
+    {
+      "id": "hire_sorter",
+      "type": "hire",
+      "role": "sorter",
+      "slot": [
+        1,
+        0
+      ],
+      "requires": [
+        "p_cap"
+      ],
+      "reveal": true
+    },
+    {
+      "id": "p_speed",
+      "type": "upgrade",
+      "stat": "player.speed",
+      "slot": [
+        0,
+        1
+      ],
+      "unlock": [
+        0,
+        2,
+        4
+      ],
+      "every": 2,
+      "max": 4
+    },
+    {
+      "id": "p_stab",
+      "type": "upgrade",
+      "stat": "player.stability",
+      "slot": [
+        0,
+        2
+      ],
+      "unlock": [
+        1,
+        3,
+        5
+      ],
+      "every": 2,
+      "max": 3
+    },
+    {
+      "id": "district2",
+      "type": "district",
+      "district": 2,
+      "at": [
+        760,
+        750
+      ],
+      "requires": [
+        "hire_sorter"
+      ],
+      "reveal": true
+    },
+    {
+      "id": "sorter_cap",
+      "type": "upgrade",
+      "stat": "sorter.capacity",
+      "slot": [
+        1,
+        0
+      ],
+      "unlock": [
+        1,
+        2,
+        4
+      ],
+      "every": 2,
+      "requires": [
+        "hire_sorter"
+      ],
+      "max": 4
+    },
+    {
+      "id": "sorter_speed",
+      "type": "upgrade",
+      "stat": "sorter.speed",
+      "slot": [
+        1,
+        1
+      ],
+      "unlock": [
+        2,
+        4
+      ],
+      "every": 2,
+      "requires": [
+        "hire_sorter"
+      ],
+      "max": 3
+    },
+    {
+      "id": "belt_speed",
+      "type": "upgrade",
+      "stat": "belt.speed",
+      "at": [
+        250,
+        700
+      ],
+      "unlock": [
+        1,
+        3,
+        5
+      ],
+      "every": 2,
+      "max": 4
+    },
+    {
+      "id": "hire_loader",
+      "type": "hire",
+      "role": "loader",
+      "slot": [
+        2,
+        0
+      ],
+      "requires": [
+        "district2"
+      ]
+    },
+    {
+      "id": "loader_cap",
+      "type": "upgrade",
+      "stat": "loader.capacity",
+      "slot": [
+        2,
+        0
+      ],
+      "unlock": [
+        3,
+        4,
+        6
+      ],
+      "every": 2,
+      "requires": [
+        "hire_loader"
+      ],
+      "max": 4
+    },
+    {
+      "id": "loader_speed",
+      "type": "upgrade",
+      "stat": "loader.speed",
+      "slot": [
+        2,
+        1
+      ],
+      "unlock": [
+        3,
+        5
+      ],
+      "every": 2,
+      "requires": [
+        "hire_loader"
+      ],
+      "max": 3
+    },
+    {
+      "id": "van_cap",
+      "type": "upgrade",
+      "stat": "van.capacity",
+      "at": [
+        1190,
+        120
+      ],
+      "unlock": [
+        3,
+        5
+      ],
+      "every": 2,
+      "max": 4
+    },
+    {
+      "id": "hire_collector",
+      "type": "hire",
+      "role": "collector",
+      "slot": [
+        3,
+        0
+      ],
+      "requires": [
+        "hire_loader"
+      ]
+    },
+    {
+      "id": "collector_cap",
+      "type": "upgrade",
+      "stat": "collector.capacity",
+      "slot": [
+        3,
+        0
+      ],
+      "unlock": [
+        4,
+        7
+      ],
+      "every": 3,
+      "requires": [
+        "hire_collector"
+      ],
+      "max": 2
+    },
+    {
+      "id": "collector_speed",
+      "type": "upgrade",
+      "stat": "collector.speed",
+      "slot": [
+        3,
+        1
+      ],
+      "unlock": [
+        5,
+        8
+      ],
+      "every": 3,
+      "requires": [
+        "hire_collector"
+      ],
+      "max": 2
+    },
+    {
+      "id": "district3",
+      "type": "district",
+      "district": 3,
+      "at": [
+        760,
+        1000
+      ],
+      "requires": [
+        "hire_collector"
+      ],
+      "reveal": true
+    },
+    {
+      "id": "hire_sorter2",
+      "type": "hire",
+      "role": "sorter",
+      "slot": [
+        1,
+        2
+      ],
+      "requires": [
+        "district3"
+      ]
+    },
+    {
+      "id": "hire_loader2",
+      "type": "hire",
+      "role": "loader",
+      "slot": [
+        2,
+        2
+      ],
+      "requires": [
+        "district3"
+      ]
+    },
+    {
+      "id": "van2_0",
+      "type": "van2",
+      "district": 0,
+      "at": [
+        1190,
+        345
+      ],
+      "requires": [
+        "hire_loader2"
+      ]
+    },
+    {
+      "id": "van2_1",
+      "type": "van2",
+      "district": 1,
+      "at": [
+        1190,
+        595
+      ],
+      "requires": [
+        "hire_loader2"
+      ]
+    },
+    {
+      "id": "van2_2",
+      "type": "van2",
+      "district": 2,
+      "at": [
+        1190,
+        845
+      ],
+      "requires": [
+        "hire_loader2"
+      ]
+    },
+    {
+      "id": "van2_3",
+      "type": "van2",
+      "district": 3,
+      "at": [
+        1190,
+        1095
+      ],
+      "requires": [
+        "hire_loader2"
+      ]
+    },
+    {
+      "id": "move",
+      "type": "move",
+      "at": [
+        1000,
+        1090
+      ],
+      "cost": 4000,
+      "requires": [
+        "hire_sorter2",
+        "hire_loader2",
+        "van2_0",
+        "van2_1",
+        "van2_2",
+        "van2_3"
+      ],
+      "reveal": true
+    }
+  ]
+}
