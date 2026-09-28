@@ -1,0 +1,117 @@
+// Every sprite texture in the game, generated once at startup into a single atlas.
+import type { Renderer } from 'pixi.js';
+import type { ParcelKind } from '../sim/types.ts';
+import {
+  drawArm,
+  drawCap,
+  drawCoin,
+  drawEyes,
+  drawHead,
+  drawIcon,
+  drawLeg,
+  drawParcel,
+  drawShadow,
+  drawTorso,
+  drawTorsoDetail,
+  drawVan,
+  drawVanDoors,
+  type IconName,
+} from './art.ts';
+import { Atlas, type AtlasEntry } from './atlas.ts';
+import { DISTRICT_COLORS, DISTRICT_SYMBOLS, INK, WHITE } from './palette.ts';
+
+const KINDS: ParcelKind[] = ['normal', 'fragile', 'express', 'xxl'];
+export const ICONS: IconName[] = [
+  'capacity',
+  'speed',
+  'stability',
+  'belt',
+  'vanCap',
+  'van2',
+  'district',
+  'sorter',
+  'loader',
+  'collector',
+  'move',
+  'turbo',
+  'helper',
+  'clapper',
+  'coin',
+  'glass',
+  'bolt',
+  'box',
+  'person',
+];
+
+export const parcelTex = (district: number, kind: ParcelKind, sorted: boolean): string =>
+  `parcel_${district}_${kind}_${sorted ? 1 : 0}`;
+
+export function buildAtlas(renderer: Renderer): Atlas {
+  const e: AtlasEntry[] = [];
+  for (let d = 0; d < DISTRICT_COLORS.length; d++) {
+    for (const kind of KINDS) {
+      for (const sorted of [false, true]) {
+        const big = kind === 'xxl';
+        e.push({
+          name: parcelTex(d, kind, sorted),
+          w: big ? 46 : 30,
+          h: big ? 48 : 32,
+          ax: big ? 23 : 15,
+          ay: big ? 46 : 30,
+          draw: (g, x, y) => drawParcel(g, x, y, DISTRICT_COLORS[d]!, DISTRICT_SYMBOLS[d]!, kind, sorted),
+        });
+      }
+    }
+    e.push({ name: `van_${d}`, w: 204, h: 150, ax: 102, ay: 98, draw: (g, x, y) => drawVan(g, x, y, DISTRICT_COLORS[d]!) });
+  }
+  e.push({ name: 'van_doors', w: 204, h: 150, ax: 102, ay: 98, draw: (g, x, y) => drawVanDoors(g, x, y) });
+  e.push({ name: 'coin', w: 16, h: 13, ax: 8, ay: 6, draw: (g, x, y) => drawCoin(g, x, y) });
+  e.push({ name: 'shadow', w: 36, h: 16, ax: 18, ay: 8, draw: (g, x, y) => drawShadow(g, x, y, 16, 6.5) });
+  e.push({ name: 'torso', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorso(g, x, y) });
+  e.push({ name: 'torso_detail', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorsoDetail(g, x, y) });
+  e.push({ name: 'head', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawHead(g, x, y) });
+  for (const f of ['front', 'side', 'back'] as const) {
+    e.push({ name: `cap_${f}`, w: 36, h: 22, ax: 12, ay: 14, draw: (g, x, y) => drawCap(g, x, y, f) });
+  }
+  e.push({ name: 'eyes_front', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawEyes(g, x, y, 'front') });
+  e.push({ name: 'eyes_side', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawEyes(g, x, y, 'side') });
+  e.push({ name: 'leg', w: 10, h: 14, ax: 5, ay: 13, draw: (g, x, y) => drawLeg(g, x, y) });
+  e.push({ name: 'arm', w: 8, h: 16, ax: 4, ay: 1, draw: (g, x, y) => drawArm(g, x, y) });
+  for (const name of ICONS) {
+    e.push({ name: `icon_${name}`, w: 64, h: 64, ax: 32, ay: 32, draw: (g, x, y) => drawIcon(g, name, x, y, 26) });
+  }
+  e.push({
+    name: 'shard',
+    w: 12,
+    h: 12,
+    ax: 6,
+    ay: 6,
+    draw: (g, x, y) => {
+      g.poly([x - 5, y + 4, x + 1, y - 5, x + 5, y + 3]).fill(WHITE);
+    },
+  });
+  e.push({ name: 'square', w: 8, h: 8, ax: 4, ay: 4, draw: (g, x, y) => g.rect(x - 4, y - 4, 8, 8).fill(WHITE) });
+  e.push({ name: 'dot', w: 20, h: 20, ax: 10, ay: 10, draw: (g, x, y) => g.circle(x, y, 9).fill(WHITE) });
+  e.push({ name: 'ring', w: 68, h: 68, ax: 34, ay: 34, draw: (g, x, y) => g.circle(x, y, 30).stroke({ width: 5, color: WHITE }) });
+  e.push({
+    name: 'arrow',
+    w: 44,
+    h: 52,
+    ax: 22,
+    ay: 50,
+    draw: (g, x, y) => {
+      const pts = [x - 9, y - 46, x + 9, y - 46, x + 9, y - 22, x + 19, y - 22, x, y - 2, x - 19, y - 22, x - 9, y - 22];
+      g.poly(pts).fill(0xf97316).stroke({ width: 3.5, color: WHITE, join: 'round' });
+      g.poly(pts).stroke({ width: 1.2, color: INK, alpha: 0.35, join: 'round' });
+    },
+  });
+  e.push({
+    name: 'bar',
+    w: 6,
+    h: 6,
+    ax: 0,
+    ay: 0,
+    draw: (g, x, y) => g.rect(x, y, 6, 6).fill(WHITE),
+  });
+  return Atlas.build(renderer, e, 2);
+}
