@@ -199,10 +199,17 @@ export class UI {
         if (langs.length > 1) {
           const lab = el('span');
           lab.textContent = t('ui.language');
-          const cur = language();
-          const next = langs[(langs.indexOf(cur) + 1) % langs.length]!;
-          const b = this.button(LANGUAGE_NAMES[cur] ?? cur, 'small toggle grey', () => actions.setLanguage(next));
-          grid.append(lab, b);
+          const sel = el('select', 'lang');
+          for (const code of langs) {
+            const o = el('option');
+            o.value = code;
+            o.textContent = LANGUAGE_NAMES[code] ?? code;
+            o.selected = code === language();
+            sel.appendChild(o);
+          }
+          sel.addEventListener('change', () => actions.setLanguage(sel.value));
+          sel.addEventListener('pointerdown', (e) => e.stopPropagation());
+          grid.append(lab, sel);
         }
         card.appendChild(grid);
         const st = actions.stats();

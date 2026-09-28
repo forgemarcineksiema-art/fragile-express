@@ -200,8 +200,10 @@ export class Game {
     } else {
       await this.maybeCommercial();
     }
+    // Leftover coins move along with the player; nothing earned is lost.
+    const leftover = Math.floor(this.wh.coins);
     const wh = new Warehouse(next, null);
-    wh.coins = coins;
+    wh.coins = coins + leftover;
     this.enterLocation(wh);
     this.writeSave();
     this.ui.toast(t(next.name), t('ui.newLocationText', { mult: next.multiplier }));

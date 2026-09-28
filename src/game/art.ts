@@ -242,17 +242,17 @@ export function drawVan(g: Graphics, x: number, y: number, stripe: number): void
   g.roundRect(left, bodyTop, w - cabW + 6, d + h, 8).stroke({ width: 1.5, color: INK, alpha: 0.35 });
 }
 
-/** Rear doors swung open (overlay at the west end of the van). */
+/** Loading ramp bridging the dock and the open rear of a parked van (overlay at the west end). */
 export function drawVanDoors(g: Graphics, x: number, y: number): void {
-  const { w, d, h } = VAN;
+  const { w, d } = VAN;
   const left = x - w / 2;
-  g.poly([left, y - d / 2 - h + 6, left - 16, y - d / 2 - h - 4, left - 16, y + d / 2 - h * 0.2, left, y + d / 2 - 6]).fill(0xcbd5e1);
-  g.poly([left, y - d / 2 - h + 6, left - 16, y - d / 2 - h - 4, left - 16, y + d / 2 - h * 0.2, left, y + d / 2 - 6]).stroke({
-    width: 1.2,
-    color: INK,
-    alpha: 0.35,
-  });
-  g.rect(left + 2, y - d / 2 - h + 8, 6, d + h - 16).fill({ color: 0x0f172a, alpha: 0.55 });
+  const top = y - d / 2 + 8;
+  const rh = d - 16;
+  g.rect(left - 14, top, 20, rh).fill(0x9ca3af);
+  for (let k = top + 3; k < top + rh - 2; k += 6) g.rect(left - 12, k, 16, 2).fill({ color: 0x4b5563, alpha: 0.6 });
+  g.rect(left - 14, top, 20, rh).stroke({ width: 1.2, color: INK, alpha: 0.4 });
+  // Open rear: dark cargo space showing on the side panel's west edge.
+  g.rect(left, y + d / 2 - VAN.h + 4, 8, VAN.h - 10).fill({ color: 0x0f172a, alpha: 0.6 });
 }
 
 /** Box truck at the start of the belt: rear to the east, open. Anchor: footprint centre. */

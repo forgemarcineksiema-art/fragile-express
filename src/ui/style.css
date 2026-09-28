@@ -367,6 +367,20 @@ body {
   min-width: calc(var(--u) * 6);
 }
 
+select.lang {
+  pointer-events: auto;
+  font-family: var(--font);
+  font-weight: 900;
+  font-size: calc(var(--u) * 1.1);
+  color: #fff;
+  background: #64748b;
+  border: none;
+  border-radius: calc(var(--u) * 1.1);
+  padding: calc(var(--u) * 0.45) calc(var(--u) * 0.8);
+  box-shadow: 0 5px 0 #475569;
+  cursor: pointer;
+}
+
 .stats {
   margin-top: calc(var(--u) * 0.9);
   font-size: calc(var(--u) * 1.05);
