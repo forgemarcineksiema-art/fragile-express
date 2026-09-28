@@ -1,7 +1,6 @@
 import type { Dict } from '../core/i18n.ts';
 
 export const it: Dict = {
-  'game.title': 'Fragile Express',
   'loc.poczta': 'Ufficio postale di quartiere',
   'loc.sortownia': 'Centro di smistamento cittadino',
   'loc.hub': 'Hub regionale',
@@ -51,7 +50,6 @@ export const it: Dict = {
   'hint.helperGone': 'Il tuo aiutante è tornato a casa',
   'hint.turboEnd': 'Il turbo è finito',
 
-  'ui.coins': 'Monete',
   'ui.pause': 'Pausa',
   'ui.paused': 'In pausa',
   'ui.resume': 'Riprendi',
@@ -68,14 +66,9 @@ export const it: Dict = {
   'ui.newLocationText': 'Qui ogni pacco paga ×{mult}',
   'ui.continue': 'Continua',
   'ui.doubleStart': 'Monete iniziali doppie',
-  'ui.startCoins': 'Monete iniziali',
   'ui.adUnavailable': 'Nessuna pubblicità disponibile ora',
   'ui.ad': 'Pubblicità',
   'ui.comingSoon': 'Gestisci l’hub più grande della regione. Altri depositi in arrivo!',
   'ui.turbo': 'Turbo',
   'ui.stats': 'Consegnati {d} · Rotti {b}',
-  'ui.reset': 'Ricomincia',
-  'ui.resetConfirm': 'Vuoi davvero ricominciare?',
-  'ui.yes': 'Sì',
-  'ui.no': 'No',
 };

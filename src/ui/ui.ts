@@ -59,7 +59,7 @@ export class UI {
     this.root.appendChild(badges);
 
     this.pauseBtn = el('button', 'hud-pause', PAUSE_SVG);
-    this.pauseBtn.setAttribute('aria-label', 'Pause');
+    this.pauseBtn.setAttribute('aria-label', t('ui.pause'));
     this.root.appendChild(this.pauseBtn);
 
     this.hint = el('div', 'hud-hint');
@@ -72,7 +72,10 @@ export class UI {
     this.adOverlay = el('div', 'ad-overlay');
     this.root.appendChild(this.adOverlay);
 
-    onLanguageChange(() => this.refreshScreen?.());
+    onLanguageChange(() => {
+      this.pauseBtn.setAttribute('aria-label', t('ui.pause'));
+      this.refreshScreen?.();
+    });
   }
 
   get isScreenOpen(): boolean {

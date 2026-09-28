@@ -1,7 +1,6 @@
 import type { Dict } from '../core/i18n.ts';
 
 export const tr: Dict = {
-  'game.title': 'Fragile Express',
   'loc.poczta': 'Mahalle Postanesi',
   'loc.sortownia': 'Şehir Ayrıştırma Merkezi',
   'loc.hub': 'Bölge Aktarma Merkezi',
@@ -51,7 +50,6 @@ export const tr: Dict = {
   'hint.helperGone': 'Yardımcın eve gitti',
   'hint.turboEnd': 'Turbo bitti',
 
-  'ui.coins': 'Para',
   'ui.pause': 'Duraklat',
   'ui.paused': 'Duraklatıldı',
   'ui.resume': 'Devam et',
@@ -68,14 +66,9 @@ export const tr: Dict = {
   'ui.newLocationText': 'Burada her paket ×{mult} öder',
   'ui.continue': 'Devam',
   'ui.doubleStart': 'Başlangıç parası iki katı',
-  'ui.startCoins': 'Başlangıç parası',
   'ui.adUnavailable': 'Şu anda reklam yok',
   'ui.ad': 'Reklam',
   'ui.comingSoon': 'Bölgenin en büyük merkezini yönetiyorsun. Yeni depolar yakında!',
   'ui.turbo': 'Turbo',
   'ui.stats': 'Teslim {d} · Kırılan {b}',
-  'ui.reset': 'Baştan başla',
-  'ui.resetConfirm': 'Gerçekten baştan başlamak istiyor musun?',
-  'ui.yes': 'Evet',
-  'ui.no': 'Hayır',
 };

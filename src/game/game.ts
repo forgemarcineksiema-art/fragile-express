@@ -284,6 +284,8 @@ export class Game {
         setLanguage: (code) => {
           this.data.settings.lang = code;
           setLanguage(code);
+          // World labels (wall sign, floor zones) are baked at build time: rebuild the views.
+          this.enterLocation(this.wh);
           this.writeSave();
         },
         stats: () => this.wh.stats,
