@@ -86,6 +86,8 @@ export class PadView {
     const isMove = pad.def.type === 'move';
     base.roundRect(-half + 3, -half + 5, PAD_SIZE, PAD_SIZE, 14).fill({ color: 0x000000, alpha: 0.12 });
     base.roundRect(-half, -half, PAD_SIZE, PAD_SIZE, 14).fill({ color: isMove ? 0x1e3a8a : 0x1f2937, alpha: 0.55 });
+    this.glow.roundRect(-half - 6, -half - 6, PAD_SIZE + 12, PAD_SIZE + 12, 18).fill(0xfde047);
+    this.glow.visible = false;
     this.node.addChild(this.glow, base);
     this.fill = new Sprite(atlas.get('bar'));
     this.fill.tint = PAD_GREEN;
@@ -146,11 +148,8 @@ export class PadView {
     this.fill.height = (PAD_SIZE - 6) * Math.min(1, p.paid / cost);
     // Affordable pads breathe to draw the eye.
     const affordable = wh.coins + p.paid >= cost;
-    this.glow.clear();
-    if (affordable) {
-      const a = 0.35 + Math.sin(time * 5) * 0.15;
-      this.glow.roundRect(-PAD_SIZE / 2 - 6, -PAD_SIZE / 2 - 6, PAD_SIZE + 12, PAD_SIZE + 12, 18).fill({ color: 0xfde047, alpha: a });
-    }
+    this.glow.visible = affordable;
+    if (affordable) this.glow.alpha = 0.35 + Math.sin(time * 5) * 0.15;
   }
 }
 
@@ -159,6 +158,7 @@ export class AdPadView {
   private readonly ring = new Graphics();
   private readonly timer: Text;
   private appear = 0;
+  private ringK = 0;
 
   constructor(
     readonly pad: AdPad,
@@ -203,11 +203,12 @@ export class AdPadView {
     } else {
       this.node.scale.set(1 + Math.sin(time * 3.2) * 0.03);
     }
-    this.ring.clear();
     const r = AD_PAD_SIZE / 2;
-    if (p.standT > 0) {
-      const k = Math.min(1, p.standT / AD_PAD_HOLD);
-      this.ring.moveTo(0, -r - 1).arc(0, 0, r + 1, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2).stroke({ width: 7, color: 0xfde047 });
+    const k = Math.min(1, p.standT / AD_PAD_HOLD);
+    if (k !== this.ringK) {
+      this.ringK = k;
+      this.ring.clear();
+      if (k > 0) this.ring.moveTo(0, -r - 1).arc(0, 0, r + 1, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2).stroke({ width: 7, color: 0xfde047 });
     }
     const left = p.expiresAt - this.wh.time;
     setText(this.timer, p.kind === 'assist' ? '' : formatTime(left));

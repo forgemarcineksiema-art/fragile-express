@@ -31,6 +31,7 @@ export class WorldView {
   private readonly tooltip: PadTooltip;
   private readonly wobble = new Graphics();
   private readonly wobbleIcon: Sprite;
+  private wobbleDrawn = false;
   private readonly helperTimers = new Map<number, Text>();
   readonly guideArrow: Sprite;
 
@@ -174,11 +175,16 @@ export class WorldView {
   private drawWobble(time: number): void {
     const p = this.wh.player;
     const g = this.wobble;
-    g.clear();
     const w = p.wobble;
     const show = w > 0.01 && p.hasFragile();
     this.wobbleIcon.visible = show;
-    if (!show) return;
+    if (!show) {
+      if (this.wobbleDrawn) g.clear();
+      this.wobbleDrawn = false;
+      return;
+    }
+    g.clear();
+    this.wobbleDrawn = true;
     const top = this.stackTop(p.id);
     const shake = w > 0.7 ? Math.sin(time * 50) * 2 * w : 0;
     const x = top.x + shake;

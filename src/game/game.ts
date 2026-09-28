@@ -102,9 +102,7 @@ export class Game {
     const hasSave = this.data.t > 0;
     this.enterLocation(new Warehouse(getLocation(locId), hasSave ? this.data.current : null));
 
-    const resize = (): void => this.camera.resize(this.app.screen.width, this.app.screen.height);
-    this.app.renderer.on('resize', resize);
-    resize();
+    this.camera.resize(this.app.screen.width, this.app.screen.height);
     this.camera.snap(this.wh.player.x, this.wh.player.y);
 
     document.addEventListener('visibilitychange', () => {
@@ -300,6 +298,9 @@ export class Game {
   private frame(dt: number): void {
     this.time += dt;
     const wh = this.wh;
+    const sw = this.app.screen.width;
+    const sh = this.app.screen.height;
+    if (sw !== this.camera.viewW || sh !== this.camera.viewH) this.camera.resize(sw, sh);
     if (this.state === 'play') {
       this.lockInput = Math.max(0, this.lockInput - dt);
       const intent = this.lockInput > 0 || this.camera.revealing ? { x: 0, y: 0, careful: false } : this.input.read();

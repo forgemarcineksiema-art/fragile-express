@@ -37,6 +37,7 @@ export class ParcelLayer {
   private readonly targets = new Map<number, Target>();
   /** Express timers drawn above parcels. */
   readonly timers = new Graphics();
+  private timersDrawn = false;
 
   constructor(
     private readonly atlas: Atlas,
@@ -120,7 +121,8 @@ export class ParcelLayer {
         this.views.delete(id);
       }
     }
-    this.timers.clear();
+    if (this.timersDrawn) this.timers.clear();
+    this.timersDrawn = false;
     for (const p of wh.parcels.values()) {
       const tg = this.targets.get(p.id);
       if (!tg) continue;
@@ -174,6 +176,7 @@ export class ParcelLayer {
     if (left <= 0) return;
     const k = Math.max(0, Math.min(1, left / total));
     const color = k > 0.5 ? 0x22c55e : k > 0.2 ? 0xfacc15 : 0xef4444;
+    this.timersDrawn = true;
     this.timers.circle(x, y, 7).fill({ color: 0x1f2937, alpha: 0.85 });
     this.timers.moveTo(x, y).arc(x, y, 5.5, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2).closePath().fill(color);
   }
