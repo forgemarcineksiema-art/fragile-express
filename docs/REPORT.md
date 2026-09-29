@@ -169,3 +169,22 @@ postawiłem za pierwszym pracownikiem, bo gracz zna już pętlę i ma monety na 
 - Kamera widzi teraz więcej otoczenia (margines świata: prawo 400, góra 190, dół 230), bo ulica i parkingi
   są na tyle blisko, że gracz widzi je przy rampach i przy przedniej ścianie.
 - Koszt: ok. 1,4 ms na klatkę (bez zmian), paczka 770 KB. Miniatury nagrane od nowa.
+
+## Piąta runda: postacie od zera
+
+Poprzednie modele były w stylu chibi: głowa szeroka jak tułów, duże błyszczące oczy z rumieńcami, widok z
+boku zrobiony z przodu tułowia i doklejonej głowy z profilu, kończyny bez kolan i łokci. Teraz:
+
+- **Proporcje dorosłego** (ok. 5 głów wysokości), mała głowa z szyją, prawdziwy profil z boku (czoło, nos,
+  podbródek, ucho, tył głowy), twarze bez rumieńców i wielkich oczu: małe oczy, brwi, cień nosa, usta.
+- **Osobne sylwetki tułowia** z przodu, z boku i z tyłu dla każdego stroju (koszulka polo kuriera z pasem
+  odblaskowym, kamizelka odblaskowa sortowacza, ogrodniczki ładowacza, kamizelka z krawatem i torba
+  zbieracza, bluza z kapturem pomocnika), z cieniowaniem.
+- **Stawy:** udo–kolano–łydka–but i ramię–łokieć–przedramię–dłoń. Wysokość ciała wynika z nóg, więc
+  stopa na ziemi zostaje na ziemi, a ciało opada przy szerokim kroku. Osobny cykl biegu i ostrożnego
+  chodu, ręce pracują przeciwnie do nóg, dalsze kończyny ciemniejsze.
+- **Różnorodność:** fryzury (krótka, jeż, bob, kucyk), zarost, sześć odcieni skóry, siedem kolorów włosów.
+- **Noszenie:** ręce pod stosem; z boku stos trzymany przed sobą tak, że widać twarz; zbieracz niesie
+  monety przed sobą.
+- Narzędzie deweloperskie `lab.html` (tylko w trybie dev): wszystkie role, kierunki i fazy kroku.
+- Koszt: ok. 2,3 ms na klatkę w Hubie, paczka 782 KB. Miniatury nagrane od nowa.

@@ -25,7 +25,7 @@ const INERTIA = 0.034; // how much the carrier's acceleration pushes each parcel
 const STRIDE = 9.5;
 const LEG = RIG.thigh + RIG.shin;
 /** How far in front of the body a stack is held when walking sideways. */
-const SIDE_REACH = 18;
+const SIDE_REACH = 24;
 
 interface Limb {
   /** At the shoulder or hip. */
@@ -374,8 +374,8 @@ export class CharacterView {
       if (carrying) {
         arm.end.visible = false;
         if (side) {
-          arm.root.rotation = -0.5;
-          arm.joint.rotation = -1.05;
+          arm.root.rotation = -0.66;
+          arm.joint.rotation = -0.95;
         } else if (back) {
           arm.root.rotation = -sgn * 0.3;
           arm.joint.visible = false;
