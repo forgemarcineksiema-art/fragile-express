@@ -3,7 +3,11 @@ import type { Renderer } from 'pixi.js';
 import type { ParcelKind } from '../sim/types.ts';
 import {
   drawArm,
+  drawBubble,
   drawCap,
+  drawHair,
+  drawHand,
+  drawHardhat,
   drawCoin,
   drawEyes,
   drawHead,
@@ -15,6 +19,8 @@ import {
   drawTorsoDetail,
   drawVan,
   drawVanDoors,
+  drawVanShadow,
+  drawWheel,
   type IconName,
 } from './art.ts';
 import { Atlas, type AtlasEntry } from './atlas.ts';
@@ -65,6 +71,10 @@ export function buildAtlas(renderer: Renderer): Atlas {
     e.push({ name: `van_${d}`, w: 204, h: 150, ax: 102, ay: 98, draw: (g, x, y) => drawVan(g, x, y, DISTRICT_COLORS[d]!) });
   }
   e.push({ name: 'van_doors', w: 204, h: 150, ax: 102, ay: 98, draw: (g, x, y) => drawVanDoors(g, x, y) });
+  e.push({ name: 'van_shadow', w: 210, h: 100, ax: 104, ay: 44, draw: (g, x, y) => drawVanShadow(g, x, y) });
+  e.push({ name: 'wheel', w: 28, h: 28, ax: 14, ay: 14, draw: (g, x, y) => drawWheel(g, x, y) });
+  e.push({ name: 'hand', w: 10, h: 10, ax: 5, ay: 5, draw: (g, x, y) => drawHand(g, x, y) });
+  e.push({ name: 'bubble', w: 36, h: 40, ax: 18, ay: 38, draw: (g, x, y) => drawBubble(g, x, y) });
   e.push({ name: 'coin', w: 16, h: 13, ax: 8, ay: 6, draw: (g, x, y) => drawCoin(g, x, y) });
   e.push({ name: 'shadow', w: 36, h: 16, ax: 18, ay: 8, draw: (g, x, y) => drawShadow(g, x, y, 16, 6.5) });
   e.push({ name: 'torso', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorso(g, x, y) });
@@ -72,6 +82,8 @@ export function buildAtlas(renderer: Renderer): Atlas {
   e.push({ name: 'head', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawHead(g, x, y) });
   for (const f of ['front', 'side', 'back'] as const) {
     e.push({ name: `cap_${f}`, w: 36, h: 22, ax: 12, ay: 14, draw: (g, x, y) => drawCap(g, x, y, f) });
+    e.push({ name: `hardhat_${f}`, w: 36, h: 22, ax: 14, ay: 14, draw: (g, x, y) => drawHardhat(g, x, y, f) });
+    e.push({ name: `hair_${f}`, w: 26, h: 26, ax: 13, ay: 13, draw: (g, x, y) => drawHair(g, x, y, f) });
   }
   e.push({ name: 'eyes_front', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawEyes(g, x, y, 'front') });
   e.push({ name: 'eyes_side', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawEyes(g, x, y, 'side') });

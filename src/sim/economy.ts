@@ -68,6 +68,10 @@ export const PLAYER_BASE_CAPACITY = 6;
 export const PLAYER_BASE_SPEED = 205; // world units per second
 export const PLAYER_SPEED_STEP = 0.07; // +7% per level
 export const CAREFUL_SPEED_FACTOR = 0.5;
+/** Velocity easing rates (1/s): higher is snappier. */
+export const PLAYER_ACCEL = 18;
+export const PLAYER_BRAKE = 24;
+export const WORKER_ACCEL = 10;
 export const PLAYER_RADIUS = 15;
 
 export const WORKER_BASE_CAPACITY: Record<WorkerRole, number> = { sorter: 3, loader: 3, collector: 0 };
@@ -127,9 +131,11 @@ export const FRAGILE = {
 export const BELT_SPEED_STEP = 0.22; // spawn rate +22% per level
 export const VAN_BASE_CAPACITY = 8;
 export const VAN_CAPACITY_STEP = 2;
-export const VAN_LEAVE_TIME = 1.1;
-export const VAN_AWAY_TIME = 4;
-export const VAN_ARRIVE_TIME = 1.1;
+export const VAN_LEAVE_TIME = 1.0;
+export const VAN_AWAY_TIME = 3;
+export const VAN_ARRIVE_TIME = 1.4;
+/** Seconds between parcels moving from the dock pallet into an arrived van. */
+export const PALLET_LOAD_INTERVAL = 0.07;
 
 export function vanCapacity(level: number): number {
   return VAN_BASE_CAPACITY + VAN_CAPACITY_STEP * level;

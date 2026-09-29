@@ -198,48 +198,118 @@ export function drawArm(g: Graphics, x: number, ty: number): void {
   g.roundRect(x - 2.8, ty, 5.6, 13, 2.8).fill(WHITE);
 }
 
+export function drawHand(g: Graphics, x: number, y: number): void {
+  g.circle(x, y, 3.6).fill(WHITE);
+}
+
+/** Loader's hard hat (drawn white, tinted yellow). */
+export function drawHardhat(g: Graphics, x: number, cy: number, facing: 'front' | 'side' | 'back'): void {
+  g.moveTo(x - 11, cy - 1)
+    .arc(x, cy - 1, 11, Math.PI, 0)
+    .lineTo(x + 11, cy - 1)
+    .closePath()
+    .fill(WHITE);
+  if (facing === 'side') g.roundRect(x - 12, cy - 2.4, 28, 4, 2).fill(WHITE);
+  else g.roundRect(x - 13.5, cy - 2.4, 27, 4, 2).fill(WHITE);
+  g.rect(x - 1.6, cy - 11.5, 3.2, 10).fill({ color: 0x000000, alpha: 0.13 });
+  g.rect(x - 11, cy - 3.4, 22, 1.4).fill({ color: 0x000000, alpha: 0.16 });
+}
+
+/** Hair seen under the cap: most of the head from behind, the back half from the side. */
+export function drawHair(g: Graphics, x: number, cy: number, facing: 'front' | 'side' | 'back'): void {
+  if (facing === 'back') {
+    g.circle(x, cy + 0.5, 10.3).fill(WHITE);
+  } else if (facing === 'side') {
+    g.moveTo(x + 1, cy - 9).arc(x, cy, 10.3, -Math.PI / 2, Math.PI / 2, true).closePath().fill(WHITE);
+    g.circle(x - 1, cy + 5.5, 3.5).fill(WHITE);
+  } else {
+    g.ellipse(x - 8.5, cy + 1.5, 2.6, 4.2).fill(WHITE);
+    g.ellipse(x + 8.5, cy + 1.5, 2.6, 4.2).fill(WHITE);
+  }
+}
+
+/** Speech bubble; anchor at the tip of the tail. */
+export function drawBubble(g: Graphics, x: number, y: number): void {
+  g.roundRect(x - 15, y - 34, 30, 26, 9).fill(WHITE).stroke({ width: 2, color: INK, alpha: 0.35 });
+  g.poly([x - 5, y - 9, x + 5, y - 9, x, y]).fill(WHITE);
+  g.moveTo(x - 5, y - 8.5).lineTo(x, y).lineTo(x + 5, y - 8.5).stroke({ width: 2, color: INK, alpha: 0.35 });
+}
+
 // ---------------------------------------------------------------------------------------------
 // Vehicles
 // ---------------------------------------------------------------------------------------------
 
 export const VAN = { w: 168, d: 70, h: 56 };
 
-/** Brand van seen from the south, cab to the east. Anchor: footprint centre at (x, y). */
+/** Ground shadow of a van (stays on the ground while the body bounces on its springs). */
+export function drawVanShadow(g: Graphics, x: number, y: number): void {
+  const { w, d } = VAN;
+  g.roundRect(x - w / 2 + 6, y - d / 2 + 16, w - 10, d - 8, 18).fill({ color: 0x000000, alpha: 0.2 });
+}
+
+/** Wheel positions relative to the van footprint centre. */
+export const VAN_WHEELS = [
+  { x: -VAN.w / 2 + 32, y: VAN.d / 2 - 5 },
+  { x: VAN.w / 2 - 32, y: VAN.d / 2 - 5 },
+];
+
+/** Brand van body seen from the south, cab to the east, without wheels. Anchor: footprint centre (x, y). */
 export function drawVan(g: Graphics, x: number, y: number, stripe: number): void {
   const { w, d, h } = VAN;
   const left = x - w / 2;
-  const cabW = 44;
-  const bodyTop = y - d / 2 - h;
-  // Shadow
-  g.roundRect(left + 4, y - d / 2 + 6, w, d, 10).fill({ color: 0x000000, alpha: 0.22 });
-  // Cargo box: roof + side
-  g.roundRect(left, bodyTop, w - cabW + 6, d, 8).fill(0xf8fafc);
-  g.rect(left, y + d / 2 - h, w - cabW + 6, h).fill(0xe2e8f0);
-  // Cab (lower roof)
-  g.roundRect(left + w - cabW, bodyTop + 14, cabW, d - 6, 10).fill(0xf1f5f9);
-  g.rect(left + w - cabW, y + d / 2 - h + 14, cabW - 2, h - 14).fill(0xe2e8f0);
-  g.roundRect(left + w - cabW + 6, bodyTop + 20, cabW - 14, d - 20, 6).fill(0x7dd3fc); // windscreen
-  g.rect(left + w - cabW + 8, bodyTop + 22, 8, d - 24).fill({ color: WHITE, alpha: 0.5 });
-  g.roundRect(left + w - cabW + 4, y + d / 2 - h + 18, 22, 16, 3).fill(0x7dd3fc); // side window
-  // Brand stripe and district band on the side
-  g.rect(left, y + d / 2 - h + 20, w - cabW + 6, 10).fill(0xf97316);
-  g.rect(left, y + d / 2 - h + 30, w - cabW + 6, 4).fill(stripe);
-  // Logo: cracked-glass badge
-  g.circle(left + 38, y + d / 2 - h + 25, 11).fill(WHITE);
-  drawGlass(g, left + 38, y + d / 2 - h + 25, 14, 0xdc2626);
-  // Roof ribs
-  for (let i = 1; i < 4; i++) g.rect(left + i * 30, bodyTop + 4, 2, d - 8).fill({ color: 0x94a3b8, alpha: 0.35 });
-  // Bumper, lights
-  g.roundRect(left + w - 6, y + d / 2 - 14, 8, 10, 2).fill(0x475569);
-  g.circle(left + w - 3, y + d / 2 - h + 26, 3).fill(0xfef08a);
-  g.rect(left - 2, y + d / 2 - h + 8, 4, 10).fill(0xef4444);
-  // Wheels
-  for (const wx of [left + 30, left + w - 30]) {
-    g.ellipse(wx, y + d / 2 - 2, 13, 11).fill(0x1f2937);
-    g.ellipse(wx, y + d / 2 - 2, 6, 5).fill(0x9ca3af);
+  const cabW = 46;
+  const boxW = w - cabW + 6;
+  const roofTop = y - d / 2 - h;
+  const sideTop = y + d / 2 - h;
+  const bottom = y + d / 2 - 6;
+  // Cargo box roof with a raised centre panel and ribs
+  g.roundRect(left, roofTop, boxW, d, 10).fill(0xf8fafc);
+  g.roundRect(left + 6, roofTop + 6, boxW - 12, d - 14, 6).fill(0xeef2f7);
+  for (let i = 1; i < 5; i++) g.rect(left + 6 + i * ((boxW - 12) / 5), roofTop + 8, 2, d - 18).fill({ color: 0x94a3b8, alpha: 0.28 });
+  // Cargo box side panel
+  g.roundRect(left, sideTop, boxW, h - 6, 5).fill(0xe8edf3);
+  g.rect(left + 2, sideTop, boxW - 4, 3).fill({ color: WHITE, alpha: 0.9 });
+  g.rect(left, bottom - 6, boxW, 6).fill(0xcbd5e1);
+  // Brand stripe, district band and logo badge
+  g.rect(left, sideTop + 17, boxW, 11).fill(0xf97316);
+  g.rect(left, sideTop + 28, boxW, 4).fill(stripe);
+  g.circle(left + 40, sideTop + 22, 12).fill(WHITE).stroke({ width: 2, color: 0xf97316 });
+  drawGlass(g, left + 40, sideTop + 22, 15, 0xdc2626);
+  // Rear door seam and handle
+  g.rect(left + 3, sideTop + 4, 1.5, h - 14).fill({ color: 0x94a3b8, alpha: 0.8 });
+  // Cab: lower roof, windscreen, side window, door
+  const cabL = left + w - cabW;
+  g.roundRect(cabL, roofTop + 14, cabW, d - 6, 13).fill(0xf1f5f9);
+  g.roundRect(cabL + 8, roofTop + 20, cabW - 17, d - 20, 7).fill(0x7dd3fc);
+  g.poly([cabL + 12, roofTop + 24, cabL + 20, roofTop + 24, cabL + 14, roofTop + d - 8, cabL + 10, roofTop + d - 8]).fill({ color: WHITE, alpha: 0.45 });
+  g.roundRect(cabL, sideTop + 14, cabW - 2, h - 20, 7).fill(0xe8edf3);
+  g.roundRect(cabL + 5, sideTop + 18, 25, 15, 4).fill(0x7dd3fc);
+  g.rect(cabL + 9, sideTop + 20, 3, 11).fill({ color: WHITE, alpha: 0.5 });
+  g.rect(cabL + 3, sideTop + 16, 1.5, h - 26).fill({ color: 0x94a3b8, alpha: 0.8 });
+  g.roundRect(cabL + 20, sideTop + 36, 8, 2.5, 1).fill(0x64748b);
+  g.roundRect(cabL - 5, sideTop + 17, 6, 9, 2).fill(0x334155); // mirror
+  // Wheel arches (wheels are separate sprites)
+  for (const wh of VAN_WHEELS) {
+    g.moveTo(x + wh.x - 16, bottom + 1).arc(x + wh.x, bottom + 1, 16, Math.PI, 0).closePath().fill(0x334155);
   }
+  // Lights and bumpers
+  g.roundRect(left + w - 5, sideTop + 26, 6, 7, 2).fill(0xfef08a);
+  g.roundRect(left + w - 8, bottom - 7, 10, 8, 2).fill(0x475569);
+  g.roundRect(left - 3, sideTop + 7, 5, 11, 2).fill(0xef4444);
+  g.roundRect(left - 4, bottom - 7, 8, 8, 2).fill(0x475569);
   // Outline
-  g.roundRect(left, bodyTop, w - cabW + 6, d + h, 8).stroke({ width: 1.5, color: INK, alpha: 0.35 });
+  g.roundRect(left, roofTop, boxW, d + h - 6, 10).stroke({ width: 1.5, color: INK, alpha: 0.3 });
+}
+
+export function drawWheel(g: Graphics, x: number, y: number): void {
+  g.circle(x, y, 12.5).fill(0x1f2937);
+  g.circle(x, y, 7.5).fill(0xcbd5e1);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2;
+    g.moveTo(x, y).lineTo(x + Math.cos(a) * 6.5, y + Math.sin(a) * 6.5).stroke({ width: 1.8, color: 0x64748b });
+  }
+  g.circle(x, y, 2.4).fill(0x475569);
+  g.circle(x - 4, y - 4, 1.4).fill({ color: WHITE, alpha: 0.6 });
 }
 
 /** Loading ramp bridging the dock and the open rear of a parked van (overlay at the west end). */

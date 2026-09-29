@@ -118,6 +118,10 @@ export class Dock {
   vans: Van[] = [];
   built = false;
   capacity = 8;
+  /** Parcels dropped while no van is loading wait here and load themselves when a van arrives. */
+  pallet: Parcel[] = [];
+  /** Countdown to the next pallet → van transfer. */
+  palletT = 0;
 
   constructor(district: number, geom: DockGeom) {
     this.district = district;
@@ -144,6 +148,16 @@ export class Dock {
   room(): number {
     const v = this.loadingVan();
     return v ? Math.max(0, this.capacity - v.items.length) : 0;
+  }
+
+  /** The pallet holds one van load. */
+  palletRoom(): number {
+    return Math.max(0, this.capacity - this.pallet.length);
+  }
+
+  /** Room for parcels right now: the van if it is loading, otherwise the pallet. */
+  dropRoom(): number {
+    return this.room() + this.palletRoom();
   }
 
   addVan(): void {

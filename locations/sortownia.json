@@ -177,6 +177,6 @@
     { "id":  "van2_1", "type":  "van2", "district":  1, "at":  [1190, 595], "requires":  ["hire_loader2"], "c0":  90 },
     { "id":  "van2_2", "type":  "van2", "district":  2, "at":  [1190, 845], "requires":  ["hire_loader2"], "c0":  90 },
     { "id":  "van2_3", "type":  "van2", "district":  3, "at":  [1190, 1095], "requires":  ["hire_loader2"], "c0":  90 },
-    { "id":  "move", "type":  "move", "at":  [1000, 1090], "cost":  3000, "requires":  ["hire_sorter2", "hire_loader2", "van2_0", "van2_1", "van2_2", "van2_3"], "reveal":  true }
+    { "id":  "move", "type":  "move", "at":  [1000, 1090], "cost":  4000, "requires":  ["hire_sorter2", "hire_loader2", "van2_0", "van2_1", "van2_2", "van2_3"], "reveal":  true }
   ]
 }

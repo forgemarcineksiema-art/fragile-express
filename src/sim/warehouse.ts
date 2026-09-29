@@ -11,6 +11,10 @@ import {
   ASSIST_MAX_MISSING,
   CAREFUL_SPEED_FACTOR,
   FRAGILE,
+  PALLET_LOAD_INTERVAL,
+  PLAYER_ACCEL,
+  PLAYER_BRAKE,
+  WORKER_ACCEL,
   HELPER_DURATION,
   PAD_DELAY,
   PAD_FILL_TIME,
@@ -433,29 +437,44 @@ export class Warehouse {
     p.careful = this.input.careful;
   }
 
+  /** Velocity eases toward the wanted velocity: short acceleration and braking instead of instant speed. */
   private moveCarrier(c: Carrier, dt: number): void {
     c.px = c.x;
     c.py = c.y;
     const m = Math.hypot(c.moveX, c.moveY);
-    if (m < 0.02) {
-      c.moving = false;
-      c.running = false;
-      return;
-    }
+    const wants = m >= 0.02;
     const isPlayer = c.role === 'player';
-    const factor = c.careful ? (isPlayer ? CAREFUL_SPEED_FACTOR : WORKER_FRAGILE_SPEED_FACTOR) : 1;
-    const len = c.speed * factor * dt * (isPlayer ? 1 : Math.min(1, m));
-    const nx = c.moveX / m;
-    const ny = c.moveY / m;
-    c.x += nx * len;
-    c.y += ny * len;
-    if (isPlayer) this.resolveCollision(c);
-    const moved = Math.hypot(c.x - c.px, c.y - c.py);
-    c.walked += moved;
-    c.dirX = nx;
-    c.dirY = ny;
-    c.moving = moved > 0.01;
-    c.running = c.moving && !c.careful;
+    let tvx = 0;
+    let tvy = 0;
+    if (wants) {
+      const factor = c.careful ? (isPlayer ? CAREFUL_SPEED_FACTOR : WORKER_FRAGILE_SPEED_FACTOR) : 1;
+      const sp = c.speed * factor * (isPlayer ? 1 : Math.min(1, m));
+      tvx = (c.moveX / m) * sp;
+      tvy = (c.moveY / m) * sp;
+      c.dirX = c.moveX / m;
+      c.dirY = c.moveY / m;
+    }
+    const rate = isPlayer ? (wants ? PLAYER_ACCEL : PLAYER_BRAKE) : WORKER_ACCEL;
+    const k = dt > 0 ? 1 - Math.exp(-rate * dt) : 0;
+    c.vx += (tvx - c.vx) * k;
+    c.vy += (tvy - c.vy) * k;
+    if (!wants && c.vx * c.vx + c.vy * c.vy < 9) {
+      c.vx = 0;
+      c.vy = 0;
+    }
+    c.x += c.vx * dt;
+    c.y += c.vy * dt;
+    if (isPlayer) {
+      this.resolveCollision(c);
+      // Keep only the velocity that survived the walls, so sliding along them feels right.
+      if (dt > 0) {
+        c.vx = (c.x - c.px) / dt;
+        c.vy = (c.y - c.py) / dt;
+      }
+    }
+    c.walked += Math.hypot(c.x - c.px, c.y - c.py);
+    c.moving = c.vx * c.vx + c.vy * c.vy > 12 * 12;
+    c.running = c.moving && wants && !c.careful;
   }
 
   private resolveCollision(c: Carrier): void {
@@ -566,18 +585,22 @@ export class Warehouse {
     return true;
   }
 
+  /** Loads the van, or the dock pallet while no van is loading, so nobody has to wait at the dock. */
   dropInVan(c: Carrier, dock: Dock): boolean {
     if (!this.ready(c) || !dock.built) return false;
     const van = dock.loadingVan();
-    if (!van || van.items.length >= dock.capacity) return false;
+    const toVan = van !== null && van.items.length < dock.capacity;
+    if (!toVan && dock.palletRoom() <= 0) return false;
     const i = c.topIndex((p) => p.sorted && p.district === dock.district);
     if (i < 0) return false;
     const [p] = c.stack.splice(i, 1);
     p!.hop++;
+    // Express parcels count as delivered on time when they reach the dock.
     if (p!.kind === 'express') p!.onTime = this.time <= p!.deadline;
-    van.items.push(p!);
+    if (toVan) van.items.push(p!);
+    else dock.pallet.push(p!);
     this.spend(c);
-    this.events.push({ type: 'drop', carrier: c.id, parcel: p!.id, to: 'van', station: dock.id });
+    this.events.push({ type: 'drop', carrier: c.id, parcel: p!.id, to: toVan ? 'van' : 'pallet', station: dock.id });
     return true;
   }
 
@@ -850,6 +873,20 @@ export class Warehouse {
     const mult = this.turboActive() ? TURBO_MULT : 1;
     for (const d of this.docks) {
       if (!d.built) continue;
+      // The pallet feeds an arrived van by itself.
+      const van = d.loadingVan();
+      if (van && d.pallet.length > 0 && van.items.length < d.capacity) {
+        d.palletT -= dt;
+        if (d.palletT <= 0) {
+          const p = d.pallet.pop()!;
+          p.hop++;
+          van.items.push(p);
+          d.palletT = PALLET_LOAD_INTERVAL;
+          this.events.push({ type: 'palletLoad', dock: d.id, parcel: p.id });
+        }
+      } else {
+        d.palletT = 0.25;
+      }
       const { departed, arrived } = d.update(dt);
       if (departed) {
         let coins = 0;

@@ -19,6 +19,8 @@ interface Particle {
   shrink: boolean;
   /** Expanding ring instead of a ballistic particle. */
   ring: boolean;
+  /** Scale growth per second (puffs). */
+  grow: number;
   /** Homing target (coins flying to a carrier); called every frame. */
   home: (() => { x: number; y: number }) | null;
   onDone: (() => void) | null;
@@ -54,7 +56,7 @@ export class Fx {
   }
 
   private add(p: Partial<Particle> & { s: Sprite; x: number; y: number; max: number }): void {
-    this.parts.push({ z: 0, vx: 0, vy: 0, vz: 0, g: 0, spin: 0, life: 0, fade: true, shrink: false, ring: false, home: null, onDone: null, ...p });
+    this.parts.push({ z: 0, vx: 0, vy: 0, vz: 0, g: 0, spin: 0, life: 0, fade: true, shrink: false, ring: false, grow: 0, home: null, onDone: null, ...p });
   }
 
   /** Glass shards and cardboard bits bursting from a broken fragile parcel. */
@@ -144,6 +146,14 @@ export class Fx {
     }
   }
 
+  /** Exhaust puff: a grey ball that drifts up, grows and fades. */
+  puff(x: number, y: number): void {
+    const s = this.sprite('dot', Math.random() < 0.5 ? 0xd1d5db : 0xe5e7eb);
+    s.scale.set(0.22 + Math.random() * 0.14);
+    s.alpha = 0.55;
+    this.add({ s, x: x + (Math.random() - 0.5) * 6, y: y + (Math.random() - 0.5) * 6, z: 5, vx: -12 - Math.random() * 18, vy: (Math.random() - 0.5) * 16, vz: 22 + Math.random() * 14, max: 0.45 + Math.random() * 0.2, grow: 1.3 });
+  }
+
   float(x: number, y: number, text: string, color = 0xfde047, size = 20): void {
     const t = this.textPool.pop() ?? label('', size);
     t.text = text;
@@ -190,6 +200,7 @@ export class Fx {
         }
         p.s.position.set(p.x, p.y - p.z);
         p.s.rotation += p.spin * dt;
+        if (p.grow) p.s.scale.set(p.s.scale.x + p.grow * dt);
         if (p.fade) p.s.alpha = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
       }
       p.s.zIndex = p.y + 1000;

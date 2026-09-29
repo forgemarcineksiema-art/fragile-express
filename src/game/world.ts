@@ -9,7 +9,8 @@ import { Background, WORLD_MARGIN } from './views/background.ts';
 import { CharacterView, HANDS_Z } from './views/character.ts';
 import { AdPadView, PadTooltip, PadView } from './views/pads.ts';
 import { ParcelLayer } from './views/parcels.ts';
-import { BeltView, DockView, PileView, ShelfView, beltTexture, deskView, truckView } from './views/stations.ts';
+import { DockView, type VanEvent } from './views/dock.ts';
+import { BeltView, PileView, ShelfView, beltTexture, deskView, truckView } from './views/stations.ts';
 import { payout } from '../sim/economy.ts';
 import type { Warehouse } from '../sim/warehouse.ts';
 
@@ -34,6 +35,8 @@ export class WorldView {
   private wobbleDrawn = false;
   private readonly helperTimers = new Map<number, Text>();
   readonly guideArrow: Sprite;
+  /** Van state changes, for sounds (set by the game). */
+  onVanEvent: ((ev: VanEvent, x: number, y: number) => void) | null = null;
 
   constructor(
     private readonly wh: Warehouse,
@@ -60,8 +63,8 @@ export class WorldView {
     });
     this.docks = wh.docks.map((d) => {
       const v = new DockView(d, atlas, wh.layout.w);
-      this.entities.addChild(v.node);
-      this.floor.addChild(v.shutterNode);
+      this.entities.addChild(v.node, v.palletNode);
+      this.floor.addChild(v.shutter);
       return v;
     });
     const unit = payout('normal', wh.loc.multiplier, false);
@@ -79,6 +82,7 @@ export class WorldView {
     });
 
     this.parcels = new ParcelLayer(atlas, this.entities, wh);
+    this.parcels.onVanLand = (d) => this.docks[d]?.kick();
     this.fx = new Fx(atlas);
     this.fx.layer.sortableChildren = true;
     this.overlay.addChild(this.fx.layer, this.parcels.timers, this.wobble);
@@ -106,13 +110,18 @@ export class WorldView {
       if (!this.chars.has(c.id)) {
         const v = new CharacterView(this.atlas, c, c.expiresAt > 0);
         this.chars.set(c.id, v);
-        this.entities.addChild(v.node);
+        this.entities.addChild(v.node, v.front);
+        const said = this.pendingSay.get(c.id);
+        if (said) {
+          v.say(said);
+          this.pendingSay.delete(c.id);
+        }
       }
     }
     for (const [id, v] of this.chars) {
       if (alive.has(id)) continue;
       this.fx.dust(v.x, v.y, 10);
-      v.node.destroy({ children: true });
+      v.destroy();
       this.chars.delete(id);
       const t = this.helperTimers.get(id);
       if (t) {
@@ -141,6 +150,15 @@ export class WorldView {
     }
   }
 
+  /** Speech bubble over a carrier. */
+  say(carrierId: number, text: string): void {
+    const v = this.chars.get(carrierId);
+    if (v) v.say(text);
+    else this.pendingSay.set(carrierId, text); // worker hired this step: its view appears next frame
+  }
+
+  private readonly pendingSay = new Map<number, string>();
+
   /** Top of the player's stack in world space (for the wobble bar and effects). */
   stackTop(id: number): { x: number; y: number } {
     const v = this.chars.get(id);
@@ -161,11 +179,17 @@ export class WorldView {
     this.bg.update();
     for (const b of this.belts) b.update(dt);
     for (const s of this.shelves) s.update(dt);
-    for (const d of this.docks) d.update();
+    for (const d of this.docks) {
+      d.update(
+        dt,
+        (x, y) => this.fx.puff(x, y),
+        (ev) => this.onVanEvent?.(ev, d.doorPoint.x, d.doorPoint.y),
+      );
+    }
     for (const p of this.piles) p.update();
     for (const p of this.pads) p.update(dt, time);
     this.syncAdPads(dt, time);
-    this.parcels.update(dt, time, this.chars, this.shelves, this.docks);
+    this.parcels.update(dt, this.chars, this.shelves, this.docks);
     this.tooltip.update();
     this.fx.update(dt);
     this.drawWobble(time);

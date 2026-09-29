@@ -42,6 +42,78 @@ export function drawZone(g: Graphics, r: Rect, color: number, arrows: number): v
   for (let i = 0; i < arrows; i++) chevron(g, cx - (arrows - 1) * 7 + i * 14, cy, 16, color, 0.55);
 }
 
+/** x of every back-wall window. */
+function windowXs(L: Layout): number[] {
+  const out: number[] = [];
+  const signL = L.w / 2 - 150;
+  const signR = L.w / 2 + 150;
+  for (let x = 90; x < L.w - 120; x += 210) if (x + 92 < signL - 6 || x > signR + 6) out.push(x);
+  return out;
+}
+
+type Decor = (g: Graphics, cx: number, top: number, th: Theme) => void;
+
+const drawClock: Decor = (g, cx, top) => {
+  const cy = top + 38;
+  g.circle(cx, cy + 2, 18).fill({ color: 0x000000, alpha: 0.12 });
+  g.circle(cx, cy, 18).fill(WHITE).stroke({ width: 4, color: 0x334155 });
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    g.circle(cx + Math.cos(a) * 13, cy + Math.sin(a) * 13, i % 3 === 0 ? 1.8 : 1).fill(0x334155);
+  }
+  g.moveTo(cx, cy).lineTo(cx - 6, cy - 5).stroke({ width: 3, color: INK, cap: 'round' });
+  g.moveTo(cx, cy).lineTo(cx + 8, cy - 8).stroke({ width: 2, color: INK, cap: 'round' });
+  g.circle(cx, cy, 2).fill(0xdc2626);
+};
+
+const drawPoster: Decor = (g, cx, top) => {
+  g.rect(cx - 22 + 3, top + 14 + 3, 44, 56).fill({ color: 0x000000, alpha: 0.12 });
+  g.rect(cx - 22, top + 14, 44, 56).fill(0xf97316);
+  g.rect(cx - 18, top + 18, 36, 34).fill(0xfff7ed);
+  drawGlass(g, cx, top + 35, 24, 0xdc2626);
+  g.rect(cx - 16, top + 56, 32, 4).fill(WHITE);
+  g.rect(cx - 12, top + 62, 24, 3).fill({ color: WHITE, alpha: 0.7 });
+};
+
+const drawBoard: Decor = (g, cx, top) => {
+  g.rect(cx - 30, top + 18, 60, 42).fill(0x8b5a2b);
+  g.rect(cx - 27, top + 21, 54, 36).fill(0xd6a86a);
+  const notes = [0xfef08a, 0xbae6fd, 0xfecaca, 0xbbf7d0];
+  notes.forEach((c, i) => {
+    const x = cx - 24 + (i % 2) * 26 + (i > 1 ? 4 : 0);
+    const y = top + 24 + Math.floor(i / 2) * 16;
+    g.rect(x, y, 20, 14).fill(c);
+    g.circle(x + 10, y + 2, 1.8).fill(0xdc2626);
+  });
+};
+
+const drawMap: Decor = (g, cx, top) => {
+  g.rect(cx - 32, top + 16, 64, 46).fill(WHITE);
+  g.rect(cx - 29, top + 19, 58, 40).fill(0xd9f99d);
+  g.rect(cx - 29, top + 36, 58, 4).fill(WHITE);
+  g.rect(cx - 6, top + 19, 4, 40).fill(WHITE);
+  g.poly([cx + 10, top + 19, cx + 29, top + 19, cx + 29, top + 30]).fill(0x93c5fd);
+  DISTRICT_COLORS.forEach((c, i) => {
+    const x = cx - 22 + (i % 3) * 20;
+    const y = top + 27 + Math.floor(i / 3) * 18;
+    g.circle(x, y, 3.2).fill(c).stroke({ width: 1, color: INK, alpha: 0.4 });
+  });
+};
+
+const drawExtinguisher: Decor = (g, cx, top, th) => {
+  // Sign on the wall and the extinguisher standing at its foot.
+  g.roundRect(cx - 12, top + 14, 24, 18, 3).fill(0xdc2626);
+  g.rect(cx - 2, top + 17, 4, 12).fill(WHITE);
+  g.rect(cx - 7, top + 21, 14, 4).fill(WHITE);
+  const by = BACK_WALL - 2;
+  g.ellipse(cx, by, 10, 3).fill({ color: 0x000000, alpha: 0.18 });
+  g.roundRect(cx - 7, by - 34, 14, 34, 6).fill(0xdc2626);
+  g.rect(cx - 7, by - 24, 14, 6).fill(0xfef2f2);
+  g.rect(cx - 3, by - 40, 6, 7).fill(0x1f2937);
+  g.moveTo(cx + 3, by - 38).quadraticCurveTo(cx + 13, by - 34, cx + 9, by - 18).stroke({ width: 2.5, color: 0x1f2937 });
+  void th;
+};
+
 export class Background {
   readonly ground = new Container();
   /** Zone markings per district, shown once the district is built. */
@@ -121,6 +193,24 @@ export class Background {
     for (let y = BACK_WALL + tile; y < L.h - WALL; y += tile) g.rect(WALL, y - 1, L.w - WALL * 2, 2).fill({ color: th.grout, alpha: 0.7 });
     // Soft shadow along the back wall
     g.rect(WALL, BACK_WALL, L.w - WALL * 2, 18).fill({ color: 0x000000, alpha: 0.08 });
+    // Scuffs so the floor does not look brand new.
+    let seed = 11;
+    const rnd = (): number => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < (L.w * L.h) / 9000; i++) {
+      const x = WALL + rnd() * (L.w - WALL * 2);
+      const y = BACK_WALL + 20 + rnd() * (L.h - BACK_WALL - WALL - 30);
+      g.ellipse(x, y, 4 + rnd() * 10, 2 + rnd() * 4).fill({ color: 0x000000, alpha: 0.03 });
+    }
+    // Sunlight falling through the windows.
+    for (const x of windowXs(L)) {
+      g.poly([x + 4, BACK_WALL, x + 88, BACK_WALL, x + 150, BACK_WALL + 150, x + 66, BACK_WALL + 150]).fill({ color: 0xfffbeb, alpha: 0.13 });
+    }
+    // Pools of light under the ceiling lamps.
+    for (let y = BACK_WALL + 150; y < L.h - 60; y += 260) {
+      for (let x = WALL + 150; x < L.w - 60; x += 280) {
+        for (let r = 5; r >= 1; r--) g.ellipse(x, y, 34 * r, 22 * r).fill({ color: 0xffffff, alpha: 0.018 });
+      }
+    }
     this.ground.addChild(g);
   }
 
@@ -187,15 +277,23 @@ export class Background {
     g.rect(-6, top - 22, L.w + 12, 24).fill(th.wallTop);
     g.rect(-6, top, L.w + 12, WALL_H).fill(th.wallFace);
     g.rect(-6, BACK_WALL - 10, L.w + 12, 10).fill(th.wallTrim);
-    for (let x = 90; x < L.w - 120; x += 210) {
+    const signW = 300;
+    const sx = L.w / 2 - signW / 2;
+    for (const x of windowXs(L)) {
       g.roundRect(x, top + 16, 92, 44, 6).fill(0xbfe3f5);
       g.roundRect(x, top + 16, 92, 44, 6).stroke({ width: 4, color: WHITE });
       g.rect(x + 44, top + 16, 4, 44).fill(WHITE);
       g.poly([x + 8, top + 52, x + 30, top + 22, x + 40, top + 22, x + 18, top + 52]).fill({ color: WHITE, alpha: 0.4 });
     }
+    // Decorations in the gaps between windows.
+    const decor = [drawClock, drawPoster, drawBoard, drawMap, drawExtinguisher];
+    let k = 0;
+    for (const x of windowXs(L)) {
+      const cx = x + 92 + 59;
+      if (cx + 40 > L.w - 40 || (cx + 40 > sx && cx - 40 < sx + signW)) continue;
+      decor[k++ % decor.length]!(g, cx, top, this.theme);
+    }
     // Sign with the location name
-    const signW = 300;
-    const sx = L.w / 2 - signW / 2;
     g.roundRect(sx, top + 10, signW, 54, 12).fill(th.sign);
     g.roundRect(sx, top + 10, signW, 54, 12).stroke({ width: 4, color: WHITE });
     g.circle(sx + 34, top + 37, 18).fill(WHITE);

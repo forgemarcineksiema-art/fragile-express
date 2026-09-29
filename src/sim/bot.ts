@@ -239,7 +239,7 @@ export class PlayerBot {
     for (const s of wh.shelves) {
       if (!s.built || s.items.length === 0) continue;
       const dock = wh.docks[s.district]!;
-      const room = dock.room();
+      const room = dock.dropRoom();
       if (room <= 0) continue;
       const score = Math.min(s.items.length, room, c.capacity);
       if (score > bestScore) {
@@ -249,7 +249,7 @@ export class PlayerBot {
     }
     const beltStock = wh.belts.reduce((n, b) => n + b.items.length, 0);
     if (bestShelf && (bestScore >= Math.min(4, c.capacity) || beltStock < 3)) {
-      const room = wh.docks[bestShelf.district]!.room();
+      const room = wh.docks[bestShelf.district]!.dropRoom();
       return { kind: 'shelfOut', shelf: bestShelf, want: Math.min(c.capacity, room) };
     }
     let belt = wh.belts[0]!;

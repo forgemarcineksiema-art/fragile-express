@@ -14,6 +14,9 @@ export class Carrier {
   /** Desired movement this step (length 0..1). */
   moveX = 0;
   moveY = 0;
+  /** Current velocity (world units per second); eases toward the desired one. */
+  vx = 0;
+  vy = 0;
   /** Careful walk: half speed, never wobbles. */
   careful = false;
   /** Full (running) speed in world units per second. */

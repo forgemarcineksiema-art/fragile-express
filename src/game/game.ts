@@ -1,6 +1,6 @@
 // Game: owns the Pixi app, the simulation of the current location, the views, UI, audio, saving and
 // every Poki flow (gameplay events, commercial and rewarded breaks).
-import { Application, Container } from 'pixi.js';
+import { Application, Container, Sprite, Texture } from 'pixi.js';
 import { Sound, type SfxName } from '../core/audio.ts';
 import { detectLanguage, setLanguage, t } from '../core/i18n.ts';
 import { readJson, writeJson } from '../core/storage.ts';
@@ -34,6 +34,7 @@ export class Game {
   private input!: Input;
   private readonly camera = new Camera();
   private readonly screenLayer = new Container();
+  private vignette: Sprite | null = null;
   private wh!: Warehouse;
   private world!: WorldView;
   private guide!: Guide;
@@ -97,7 +98,8 @@ export class Game {
     Sound.setMusic(this.data.settings.music);
     setLanguage(this.data.settings.lang ?? detectLanguage(navigator.languages ?? [navigator.language]));
 
-    this.app.stage.addChild(this.screenLayer);
+    this.vignette = makeVignette();
+    this.app.stage.addChild(this.vignette, this.screenLayer);
     const locId = LOCATIONS[this.data.current.loc] ? this.data.current.loc : FIRST_LOCATION;
     const hasSave = this.data.t > 0;
     this.enterLocation(new Warehouse(getLocation(locId), hasSave ? this.data.current : null));
@@ -168,6 +170,10 @@ export class Game {
     }
     this.wh = wh;
     this.world = new WorldView(wh, this.atlas, this.app.renderer);
+    this.world.onVanEvent = (ev) => {
+      if (ev === 'reverse') Sound.play('reverse');
+      else if (ev === 'stop') Sound.play('brake');
+    };
     this.app.stage.addChildAt(this.world.root, 0);
     const b = this.world.bounds;
     this.camera.setBounds(b.x, b.y, b.w, b.h);
@@ -306,6 +312,10 @@ export class Game {
     const sw = this.app.screen.width;
     const sh = this.app.screen.height;
     if (sw !== this.camera.viewW || sh !== this.camera.viewH) this.camera.resize(sw, sh);
+    if (this.vignette && (this.vignette.width !== sw || this.vignette.height !== sh)) {
+      this.vignette.width = sw;
+      this.vignette.height = sh;
+    }
     if (this.state === 'play') {
       this.lockInput = Math.max(0, this.lockInput - dt);
       const intent = this.lockInput > 0 || this.camera.revealing ? { x: 0, y: 0, careful: false } : this.input.read();
@@ -380,6 +390,7 @@ export class Game {
           const top = world.stackTop(e.carrier);
           world.fx.shatter(top.x, top.y + 60, 60, DISTRICT_COLORS[e.district]!);
           world.fx.float(top.x, top.y - 10, `💔 −${formatCoins(15 * wh.loc.multiplier)}`, 0xfca5a5, 20);
+          world.say(e.carrier, '!');
           this.camera.shake(9);
           break;
         }
@@ -410,6 +421,7 @@ export class Game {
           break;
         }
         case 'deposit': {
+          world.say(e.carrier, '$');
           const s = wh.layout.safe.stand;
           world.fx.float(s.x, s.y - 70, `+${formatCoins(e.amount)}`, 0xfde047, 20);
           this.sfx('coin', -5);
@@ -437,6 +449,7 @@ export class Game {
         }
         case 'hired': {
           this.sfx('hire');
+          world.say(e.carrier, '👋');
           const s = wh.layout.safe.stand;
           world.fx.dust(s.x, s.y, 8);
           break;
@@ -476,4 +489,19 @@ export class Game {
       }
     }
   }
+}
+
+/** Soft dark edges drawn over the world (screen space, under the HUD). */
+function makeVignette(): Sprite {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d')!;
+  const gr = ctx.createRadialGradient(128, 128, 80, 128, 128, 184);
+  gr.addColorStop(0, 'rgba(0,0,0,0)');
+  gr.addColorStop(1, 'rgba(24,18,44,0.34)');
+  ctx.fillStyle = gr;
+  ctx.fillRect(0, 0, 256, 256);
+  const s = new Sprite(Texture.from(c));
+  s.eventMode = 'none';
+  return s;
 }

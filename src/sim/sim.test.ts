@@ -21,6 +21,7 @@ function run(wh: Warehouse, seconds: number, each?: () => void): void {
 function place(wh: Warehouse, x: number, y: number): void {
   wh.player.x = wh.player.px = x;
   wh.player.y = wh.player.py = y;
+  wh.player.vx = wh.player.vy = 0;
   wh.input = { x: 0, y: 0, careful: false };
 }
 
@@ -112,6 +113,38 @@ describe('shelves and vans', () => {
     expect(wh.piles[0]!.value).toBe(5 * d.capacity);
     run(wh, 10);
     expect(d.loadingVan()).not.toBeNull();
+  });
+
+  it('while the van is away parcels go on the pallet and load themselves when it returns', () => {
+    const wh = new Warehouse(loc(), null, { noAds: true });
+    const d = wh.docks[0]!;
+    const van = d.loadingVan()!;
+    van.items.length = 0;
+    van.state = 'away';
+    van.t = 3;
+    for (let i = 0; i < 5; i++) wh.player.stack.push(parcel(wh, 'normal', 0, true));
+    place(wh, d.geom.stand.x, d.geom.stand.y);
+    run(wh, 1);
+    expect(wh.player.stack.length).toBe(0);
+    expect(d.pallet.length).toBe(5);
+    place(wh, 900, 700);
+    run(wh, 3 + 1.4 + 1.5);
+    expect(d.loadingVan()).toBe(van);
+    expect(d.pallet.length).toBe(0);
+    expect(van.items.length).toBe(5);
+  });
+
+  it('the pallet holds one van load at most', () => {
+    const wh = new Warehouse(loc(), null, { noAds: true });
+    const d = wh.docks[0]!;
+    d.vans[0]!.state = 'away';
+    d.vans[0]!.t = 99;
+    wh.player.capacity = 20;
+    for (let i = 0; i < d.capacity + 3; i++) wh.player.stack.push(parcel(wh, 'normal', 0, true));
+    place(wh, d.geom.stand.x, d.geom.stand.y);
+    run(wh, 3);
+    expect(d.pallet.length).toBe(d.capacity);
+    expect(wh.player.stack.length).toBe(3);
   });
 
   it('player collects a coin pile by walking over it', () => {

@@ -28,7 +28,8 @@ export type AdSize = 'small' | 'medium' | 'large';
 export type SimEvent =
   | { type: 'spawn'; parcel: number; belt: number }
   | { type: 'pickup'; carrier: number; parcel: number; from: 'belt' | 'shelf' }
-  | { type: 'drop'; carrier: number; parcel: number; to: 'shelf' | 'van'; station: string }
+  | { type: 'drop'; carrier: number; parcel: number; to: 'shelf' | 'van' | 'pallet'; station: string }
+  | { type: 'palletLoad'; dock: string; parcel: number }
   | { type: 'stamp'; carrier: number; parcel: number; station: string }
   | { type: 'break'; carrier: number; parcel: number; district: number; x: number; y: number; h: number }
   | { type: 'wobble'; carrier: number }

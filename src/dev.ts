@@ -89,14 +89,14 @@ export function installDevTools(game: Game): void {
   };
   /** Zoom the camera out around a world point (null restores normal zoom). */
   const overview = (zoom: number | null, x = 0, y = 0): void => {
-    const cam = (g as unknown as { camera: { fixedZoom: number | null; zoom: number; resize: (w: number, h: number) => void; viewW: number; viewH: number; snap: (x: number, y: number) => void } }).camera;
+    const cam = (
+      g as unknown as {
+        camera: { fixedZoom: number | null; pin: { x: number; y: number } | null; resize: (w: number, h: number) => void; viewW: number; viewH: number };
+      }
+    ).camera;
     cam.fixedZoom = zoom;
+    cam.pin = zoom ? { x, y } : null;
     cam.resize(cam.viewW, cam.viewH);
-    if (zoom) {
-      g.wh.player.x = x;
-      g.wh.player.y = y;
-    }
-    cam.snap(x, y);
     sim(0.05, null);
   };
   const thumbnails = async (): Promise<string[]> => {

@@ -1,5 +1,6 @@
 // Parcel sprites. Each frame every parcel gets a target from the container it is in (belt, stack,
-// shelf, van); when its `hop` counter changes it flies there along an arc instead of snapping.
+// shelf, pallet, van); when its `hop` counter changes it flies there along an arc instead of snapping.
+// Landings squash and spring back, and parcels whose support was taken away fall under gravity.
 import { Graphics, Sprite, type Container } from 'pixi.js';
 import type { Parcel } from '../../sim/types.ts';
 import type { Warehouse } from '../../sim/warehouse.ts';
@@ -7,7 +8,8 @@ import { PARCEL, PARCEL_XXL } from '../art.ts';
 import { setTexture, type Atlas } from '../atlas.ts';
 import { parcelTex } from '../textures.ts';
 import { HANDS_Z, type CharacterView } from './character.ts';
-import { BELT_H, type DockView, type ShelfView } from './stations.ts';
+import type { DockView } from './dock.ts';
+import { BELT_H, type ShelfView } from './stations.ts';
 
 interface Target {
   x: number;
@@ -16,6 +18,8 @@ interface Target {
   zi: number;
   rot: number;
   hide: boolean;
+  /** Dock index when the parcel is going into a van. */
+  van: number;
 }
 
 interface View {
@@ -25,11 +29,20 @@ interface View {
   x: number;
   y: number;
   z: number;
+  fallV: number;
+  /** Landing squash, 1 → 0. */
+  land: number;
   fly: { fx: number; fy: number; fz: number; t: number; dur: number; arc: number } | null;
 }
 
 const heightOf = (p: Parcel): number => (p.kind === 'xxl' ? PARCEL_XXL.h : PARCEL.h);
 const depthOf = (p: Parcel): number => (p.kind === 'xxl' ? PARCEL_XXL.d : PARCEL.d);
+const GRAVITY = 1400;
+const LAND_TIME = 0.2;
+
+/** Small deterministic "hand placed" offsets for parcels at rest. */
+const jitterX = (id: number): number => (((id * 37) % 7) - 3) * 0.55;
+const jitterR = (id: number): number => (((id * 53) % 9) - 4) * 0.012;
 
 export class ParcelLayer {
   private readonly views = new Map<number, View>();
@@ -38,6 +51,8 @@ export class ParcelLayer {
   /** Express timers drawn above parcels. */
   readonly timers = new Graphics();
   private timersDrawn = false;
+  /** Called when a parcel lands inside a van (the van dips on its springs). */
+  onVanLand: ((dock: number) => void) | null = null;
 
   constructor(
     private readonly atlas: Atlas,
@@ -51,6 +66,14 @@ export class ParcelLayer {
     return v ? { x: v.x, y: v.y - v.z } : null;
   }
 
+  private onBeltStart(id: number): boolean {
+    for (const b of this.wh.belts) {
+      const last = b.items[b.items.length - 1];
+      if (last && last.p.id === id && last.s < 12) return true;
+    }
+    return false;
+  }
+
   private sprite(): Sprite {
     const s = this.pool.pop() ?? new Sprite();
     s.visible = true;
@@ -61,14 +84,14 @@ export class ParcelLayer {
     return s;
   }
 
-  private computeTargets(chars: Map<number, CharacterView>, shelves: ShelfView[], docks: DockView[], time: number): void {
+  private computeTargets(chars: Map<number, CharacterView>, shelves: ShelfView[], docks: DockView[]): void {
     const T = this.targets;
     T.clear();
     const wh = this.wh;
     for (const b of wh.belts) {
       const { x0, y } = b.geom;
       for (const it of b.items) {
-        T.set(it.p.id, { x: x0 + it.s, y, z: BELT_H, zi: y + 22 + 0.01 + it.s * 1e-5, rot: 0, hide: false });
+        T.set(it.p.id, { x: x0 + it.s, y, z: BELT_H, zi: y + 22 + 0.01 + it.s * 1e-5, rot: 0, hide: false, van: -1 });
       }
     }
     for (const c of wh.carriers) {
@@ -76,20 +99,17 @@ export class ParcelLayer {
       if (!cv) continue;
       const off = cv.stackOffset();
       const scale = cv.node.scale.y;
-      let z = HANDS_Z * scale - cv.bob;
-      const w = c.wobble;
-      const freq = 9 + w * 8;
+      let z = (HANDS_Z - cv.bob) * scale;
       for (let i = 0; i < c.stack.length; i++) {
         const p = c.stack[i]!;
-        const k = i + 1;
-        const sway = cv.lean * i * 0.55 + (w > 0.02 ? Math.sin(time * freq + i * 0.35) * w * k * 1.25 : 0);
         T.set(p.id, {
-          x: cv.x + off.dx + sway,
+          x: cv.x + off.dx + cv.sway(i),
           y: cv.y + 1,
           z,
           zi: cv.y + (off.front ? 0.02 : -0.02) + i * 1e-4,
-          rot: sway * 0.018,
+          rot: cv.swayRot(i),
           hide: false,
+          van: -1,
         });
         z += heightOf(p);
       }
@@ -98,20 +118,35 @@ export class ParcelLayer {
       const items = sv.shelfItems;
       for (let i = 0; i < items.length; i++) {
         const s = sv.slot(i);
-        T.set(items[i]!.id, { x: s.x, y: s.y, z: s.z, zi: sv.zBase + 0.01 + s.y * 1e-5 + s.z * 1e-3, rot: 0, hide: false });
+        const id = items[i]!.id;
+        T.set(id, { x: s.x + jitterX(id), y: s.y, z: s.z, zi: sv.zBase + 0.01 + s.y * 1e-5 + s.z * 1e-3, rot: jitterR(id), hide: false, van: -1 });
       }
     }
     for (let d = 0; d < wh.docks.length; d++) {
       const dock = wh.docks[d]!;
-      const door = docks[d]!.doorPoint;
+      const dv = docks[d]!;
+      for (let i = 0; i < dock.pallet.length; i++) {
+        const s = dv.palletSlot(i);
+        const id = dock.pallet[i]!.id;
+        T.set(id, {
+          x: s.x + jitterX(id) * 0.5,
+          y: s.y,
+          z: s.z,
+          zi: dv.palletZ + 0.01 + s.y * 1e-5 + s.z * 1e-3,
+          rot: jitterR(id) * 0.6,
+          hide: false,
+          van: -1,
+        });
+      }
+      const door = dv.doorPoint;
       for (const v of dock.vans) {
-        for (const p of v.items) T.set(p.id, { x: door.x, y: door.y, z: 26, zi: door.y + 40, rot: 0, hide: true });
+        for (const p of v.items) T.set(p.id, { x: door.x, y: door.y, z: 26, zi: door.y + 40, rot: 0, hide: true, van: d });
       }
     }
   }
 
-  update(dt: number, time: number, chars: Map<number, CharacterView>, shelves: ShelfView[], docks: DockView[]): void {
-    this.computeTargets(chars, shelves, docks, time);
+  update(dt: number, chars: Map<number, CharacterView>, shelves: ShelfView[], docks: DockView[]): void {
+    this.computeTargets(chars, shelves, docks);
     const wh = this.wh;
     // Remove views of parcels that left the simulation (delivered or broken).
     for (const [id, v] of this.views) {
@@ -131,7 +166,9 @@ export class ParcelLayer {
       if (!v) {
         const s = this.sprite();
         setTexture(s, this.atlas.get(tex));
-        v = { sprite: s, hop: p.hop, tex, x: tg.x, y: tg.y, z: tg.z, fly: null };
+        // Fresh parcels at the start of a belt drop out of the truck onto it.
+        const fromTruck = tg.zi < 1e5 && this.onBeltStart(p.id);
+        v = { sprite: s, hop: p.hop, tex, x: tg.x, y: tg.y, z: tg.z + (fromTruck ? 46 : 0), fallV: 0, land: 0, fly: null };
         this.views.set(p.id, v);
       }
       if (v.tex !== tex) {
@@ -142,8 +179,10 @@ export class ParcelLayer {
         v.hop = p.hop;
         const dist = Math.hypot(tg.x - v.x, tg.y - v.y);
         v.fly = { fx: v.x, fy: v.y, fz: v.z, t: 0, dur: Math.min(0.34, 0.16 + dist / 1400), arc: 26 + Math.min(60, dist * 0.18) };
+        v.fallV = 0;
       }
       const s = v.sprite;
+      let rot = tg.rot;
       if (v.fly) {
         const f = v.fly;
         f.t += dt / f.dur;
@@ -153,17 +192,40 @@ export class ParcelLayer {
         v.y = f.fy + (tg.y - f.fy) * e;
         v.z = f.fz + (tg.z - f.fz) * e + Math.sin(k * Math.PI) * f.arc;
         s.zIndex = 1e6 + v.y;
-        s.rotation = Math.sin(k * Math.PI) * 0.35;
+        rot = Math.sin(k * Math.PI) * 0.35;
         s.visible = true;
-        if (k >= 1) v.fly = null;
+        if (k >= 1) {
+          v.fly = null;
+          v.land = 1;
+          if (tg.van >= 0) this.onVanLand?.(tg.van);
+        }
       } else {
         v.x = tg.x;
         v.y = tg.y;
-        v.z = tg.z;
+        if (tg.z < v.z - 0.5) {
+          // Support removed: fall onto the parcel below.
+          v.fallV += GRAVITY * dt;
+          v.z = Math.max(tg.z, v.z - v.fallV * dt);
+          if (v.z <= tg.z) {
+            v.fallV = 0;
+            v.land = 0.6;
+          }
+        } else {
+          v.z = tg.z;
+          v.fallV = 0;
+        }
         s.zIndex = tg.zi;
-        s.rotation = tg.rot;
         s.visible = !tg.hide;
       }
+      // Landing squash: wide and short, then springs back.
+      if (v.land > 0) {
+        v.land = Math.max(0, v.land - dt / LAND_TIME);
+        const q = Math.sin(v.land * Math.PI) * 0.16;
+        s.scale.set(1 + q * 0.7, 1 - q);
+      } else if (s.scale.x !== 1) {
+        s.scale.set(1);
+      }
+      s.rotation = rot;
       // Sprites are anchored at the bottom of the front face: footprint centre + half depth.
       s.position.set(v.x, v.y + depthOf(p) / 2 - v.z);
       if (p.kind === 'express' && s.visible) this.drawTimer(p, v.x, v.y + depthOf(p) / 2 - v.z - heightOf(p) - depthOf(p) - 8);
@@ -173,7 +235,7 @@ export class ParcelLayer {
   private drawTimer(p: Parcel, x: number, y: number): void {
     const left = p.deadline - this.wh.time;
     const total = this.wh.loc.features.expressTime;
-    if (left <= 0) return;
+    if (left <= 0 || p.onTime) return;
     const k = Math.max(0, Math.min(1, left / total));
     const color = k > 0.5 ? 0x22c55e : k > 0.2 ? 0xfacc15 : 0xef4444;
     this.timersDrawn = true;

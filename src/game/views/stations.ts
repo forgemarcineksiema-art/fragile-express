@@ -1,10 +1,8 @@
 // Entity views for the belt, shelves, van docks, coin piles and the cash desk.
 import { Container, Graphics, Sprite, Text, TilingSprite, type Renderer, type Texture } from 'pixi.js';
-import { VAN_ARRIVE_TIME, VAN_LEAVE_TIME } from '../../sim/economy.ts';
-import { WALL } from '../../sim/layout.ts';
-import type { Belt, CoinPile, Dock, Shelf } from '../../sim/stations.ts';
+import type { Belt, CoinPile, Shelf } from '../../sim/stations.ts';
 import type { Warehouse } from '../../sim/warehouse.ts';
-import { drawSymbol, drawTruck, PARCEL, VAN } from '../art.ts';
+import { drawSymbol, drawTruck, PARCEL } from '../art.ts';
 import type { Atlas } from '../atlas.ts';
 import { COIN, DISTRICT_COLORS, DISTRICT_SYMBOLS, INK, WHITE, shade } from '../palette.ts';
 import { label, setText } from '../text.ts';
@@ -13,9 +11,6 @@ export const BELT_H = 14;
 export const RACK_H = 12;
 export const RACK_COLS = 2;
 export const RACK_ROWS = 8;
-
-const easeIn = (t: number): number => t * t;
-const easeOut = (t: number): number => 1 - (1 - t) * (1 - t);
 
 export function beltTexture(renderer: Renderer): Texture {
   const g = new Graphics();
@@ -155,103 +150,6 @@ export class ShelfView {
     setText(this.count, `${s.items.length}/${s.capacity}`);
     this.count.style.fill = full ? 0xfca5a5 : 0xffffff;
     this.count.visible = s.built;
-  }
-}
-
-export interface VanPose {
-  x: number;
-  y: number;
-  visible: boolean;
-  doors: boolean;
-}
-
-export class DockView {
-  readonly node = new Container();
-  private readonly vans: Sprite[] = [];
-  private readonly doors: Sprite;
-  private readonly loadText: Text;
-  private readonly bar = new Graphics();
-  private readonly shutter = new Graphics();
-  private lastLoad = -1;
-
-  constructor(
-    private readonly dock: Dock,
-    private readonly atlas: Atlas,
-    worldW: number,
-  ) {
-    this.doors = new Sprite(atlas.get('van_doors'));
-    this.node.addChild(this.doors);
-    this.loadText = label('', 16);
-    this.node.addChild(this.bar, this.loadText);
-    this.node.zIndex = dock.geom.y + VAN.d / 2;
-    // Roller shutter shown while the district is locked.
-    const y = dock.geom.y;
-    this.shutter.rect(worldW - WALL - 2, y - 46, WALL + 4, 92).fill(0x9ca3af);
-    for (let k = y - 44; k < y + 44; k += 7) this.shutter.rect(worldW - WALL - 2, k, WALL + 4, 2).fill(0x6b7280);
-    this.shutter.zIndex = y - 60;
-  }
-
-  get shutterNode(): Graphics {
-    return this.shutter;
-  }
-
-  /** Where parcels fly to when loaded (the open rear doors). */
-  get doorPoint(): { x: number; y: number } {
-    return { x: this.dock.geom.bay.x - VAN.w / 2 + 6, y: this.dock.geom.bay.y };
-  }
-
-  private pose(i: number): VanPose {
-    const v = this.dock.vans[i]!;
-    const bay = this.dock.geom.bay;
-    switch (v.state) {
-      case 'loading':
-        return { x: bay.x, y: bay.y, visible: true, doors: true };
-      case 'arriving':
-        return { x: bay.x + easeOut(v.t / VAN_ARRIVE_TIME) * 520, y: bay.y, visible: true, doors: false };
-      case 'leaving':
-        return { x: bay.x + easeIn(1 - v.t / VAN_LEAVE_TIME) * 620, y: bay.y, visible: true, doors: false };
-      case 'waiting':
-        return { x: bay.x + 205, y: bay.y, visible: true, doors: false };
-      case 'away':
-        return { x: 0, y: 0, visible: false, doors: false };
-    }
-  }
-
-  update(): void {
-    const d = this.dock;
-    this.node.visible = d.built;
-    this.shutter.visible = !d.built;
-    while (this.vans.length < d.vans.length) {
-      const s = new Sprite(this.atlas.get(`van_${d.district}`));
-      this.node.addChildAt(s, 0);
-      this.vans.push(s);
-    }
-    let doorsOpen = false;
-    for (let i = 0; i < d.vans.length; i++) {
-      const p = this.pose(i);
-      const s = this.vans[i]!;
-      s.visible = p.visible;
-      s.position.set(p.x, p.y);
-      if (p.doors) {
-        doorsOpen = true;
-        this.doors.position.set(p.x, p.y);
-      }
-    }
-    this.doors.visible = doorsOpen;
-    const van = d.loadingVan();
-    const load = van ? van.items.length : -1;
-    this.loadText.visible = this.bar.visible = !!van;
-    if (van && load !== this.lastLoad) {
-      this.lastLoad = load;
-      const bx = d.geom.bay.x - 40;
-      const by = d.geom.bay.y - VAN.d / 2 - VAN.h - 26;
-      setText(this.loadText, `${load}/${d.capacity}`);
-      this.loadText.position.set(bx, by - 16);
-      const w = 70;
-      this.bar.clear();
-      this.bar.roundRect(bx - w / 2, by - 4, w, 9, 4).fill({ color: 0x1f2937, alpha: 0.85 });
-      this.bar.roundRect(bx - w / 2 + 1.5, by - 2.5, Math.max(0, (w - 3) * (load / d.capacity)), 6, 3).fill(DISTRICT_COLORS[d.district]!);
-    }
   }
 }
 

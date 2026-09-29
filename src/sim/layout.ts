@@ -141,6 +141,8 @@ export interface DockGeom {
   /** Centre of a parked van (outside the right wall). */
   bay: Vec;
   pile: Vec;
+  /** Loading pallet against the wall just north of the dock zone. */
+  pallet: Vec;
 }
 
 export interface Layout {
@@ -198,6 +200,7 @@ export function dockGeom(w: number, y: number): DockGeom {
     stand: { x: zone.x + zone.w / 2, y },
     bay: { x: w + VAN_LENGTH / 2 + 6, y },
     pile: { x: zone.x + zone.w / 2 - 6, y: y + DOCK_ZONE.h / 2 + PILE_RADIUS + 8 },
+    pallet: { x: wallX - 30, y: y - DOCK_ZONE.h / 2 - 22 },
   };
 }
 

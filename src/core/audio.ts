@@ -15,6 +15,8 @@ export type SfxName =
   | 'hire'
   | 'ui'
   | 'turbo'
+  | 'reverse'
+  | 'brake'
   | 'error';
 
 type Wave = OscillatorType;
@@ -184,6 +186,12 @@ export class AudioEngine {
       case 'turbo':
         this.tone(220, 0.5, 'sawtooth', 0.1, 0, 1760);
         this.tone(440, 0.5, 'square', 0.05, 0.05, 1760);
+        break;
+      case 'reverse':
+        for (let i = 0; i < 3; i++) this.tone(1040, 0.09, 'square', 0.05, i * 0.26);
+        break;
+      case 'brake':
+        this.hiss(0.22, 0.12, 2600, 0.9);
         break;
       case 'error':
         this.tone(220, 0.12, 'square', 0.1);

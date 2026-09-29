@@ -20,7 +20,7 @@ type Job =
   | { kind: 'safe' }
   | { kind: 'rest'; at: Vec };
 
-const ARRIVE = 5;
+const ARRIVE = 7;
 
 export class Worker {
   readonly carrier: Carrier;
@@ -286,7 +286,7 @@ export class Worker {
     for (const s of wh.shelves) {
       if (!s.built || s.items.length === 0) continue;
       const dock = wh.docks[s.district]!;
-      const room = dock.room() + (dock.loadingVan() ? 0 : dock.vans.some((v) => v.state !== 'leaving') ? 2 : 0);
+      const room = dock.dropRoom();
       if (room <= 0) continue;
       const d = Math.sqrt(dist2(c.x, c.y, s.geom.outStand.x, s.geom.outStand.y));
       const score = Math.min(s.items.length, room) * 60 - d * 0.25 - (claimed.has(s) ? 400 : 0);
@@ -297,7 +297,7 @@ export class Worker {
     }
     if (best) {
       const dock = wh.docks[best.district]!;
-      const want = Math.max(1, Math.min(c.capacity, dock.loadingVan() ? dock.room() : c.capacity));
+      const want = Math.max(1, Math.min(c.capacity, dock.dropRoom()));
       this.go(wh, { kind: 'shelfOut', shelf: best, want });
       return;
     }

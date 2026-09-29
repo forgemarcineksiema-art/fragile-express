@@ -59,7 +59,16 @@ export class Camera {
     this.clampToBounds();
   }
 
+  /** Development override: keep the camera on a point instead of the player. */
+  pin: { x: number; y: number } | null = null;
+
   update(dt: number, fx: number, fy: number, vx: number, vy: number): void {
+    if (this.pin) {
+      this.x = this.pin.x;
+      this.y = this.pin.y;
+      this.clampToBounds();
+      return;
+    }
     const r = this.reveal;
     if (r) {
       // Pan out (0.7 s), hold (1.1 s), pan back (0.6 s).
