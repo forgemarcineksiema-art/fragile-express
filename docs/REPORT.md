@@ -150,3 +150,22 @@ postawiłem za pierwszym pracownikiem, bo gracz zna już pętlę i ma monety na 
   który płynnie odlicza; zbieracz wysuwa szufladę kasy; większe napisy wypłat z monetą (i „×2” przy turbo);
   dźwięki brzęku i kasy.
 
+
+## Czwarta runda
+
+- **Postacie od nowa:** każda rola ma własny strój (kamizelki odblaskowe, kombinezon i kask ładowacza,
+  kamizelka i torba zbieracza), cieniowane głowy z fryzurami, czapki z logo, osobne rękawy i przedramiona,
+  kolorowe buty. Twarze mają nastroje: uśmiech przy zbieraniu monet i zakupie, zmartwienie gdy kruchy stos
+  się chwieje (z kroplą potu), szok przy stłuczce, mruganie. W biegu spod butów lecą obłoczki kurzu.
+- **Ulica przed budynkiem:** dwa pasy z przerywaną linią, krawężniki, chodniki, przejście dla pieszych,
+  studzienki, ławki, kosze, donice i hydrant. Jeżdżą po niej auta w obu kierunkach; trzymają odstęp i
+  hamują za wolniejszymi (tylko wizualnie, bez wpływu na grę).
+- **Parkingi:** za budynkiem parking pracowników (auta zaparkowane przodem albo tyłem), na zachód od
+  budynku parkingi między pasami ciężarówek (auta bokiem), w placu manewrowym rzędy aut na północnym i
+  południowym końcu. Kolory aut losowane, ale stałe dla lokacji.
+- **Plac manewrowy:** namalowane stanowiska z numerami ramp, żółta linia zatrzymania, przerywane pasy
+  kolejki, słupki przy drzwiach ramp, „zęby” ustąp pierwszeństwa przy wyjeździe na ulicę.
+- **Latarnie** wzdłuż parkingów, między rampami i po drugiej stronie ulicy; znaki „P”.
+- Kamera widzi teraz więcej otoczenia (margines świata: prawo 400, góra 190, dół 230), bo ulica i parkingi
+  są na tyle blisko, że gracz widzi je przy rampach i przy przedniej ścianie.
+- Koszt: ok. 1,4 ms na klatkę (bez zmian), paczka 770 KB. Miniatury nagrane od nowa.
