@@ -234,7 +234,7 @@ Przegląd całej gry w 16:9 i poprawki tego, co najbardziej odstawało:
 
 - **Zlecenia kurierskie** (wzór: zamówienia kurierskie w Burger Please). Po zatrudnieniu pierwszego
   pracownika co ok. 30–55 s przez drzwi w przedniej ścianie wchodzi kurier i staje na macie. Nad nim karta:
-  2–4 paczki z dzielni (część kruchych), pasek czasu i nagroda. Gracz przynosi pasujące paczki (z taśmy albo
+  2–4 paczki z różnych dzielnic (część kruchych), pasek czasu i nagroda. Gracz przynosi pasujące paczki (z taśmy albo
   regału), każda płaci 4× stawkę vana, a komplet dodaje 50% premii. Po czasie kurier odchodzi bez kary.
   Pracownicy go nie obsługują, więc gracz ma aktywną, opłacalną robotę, gdy magazyn działa sam; kruche
   paczki w zamówieniu są najcenniejsze. Automatyzacja, zarobki offline i tempo z symulatora bez zmian (bot
