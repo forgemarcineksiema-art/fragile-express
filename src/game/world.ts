@@ -43,6 +43,7 @@ export class WorldView {
   private readonly adPads = new Map<string, AdPadView>();
   private readonly tooltip: PadTooltip;
   private readonly wobble = new Graphics();
+  private readonly wrap = new Graphics();
   private readonly wobbleIcon: Sprite;
   private wobbleDrawn = false;
   private readonly helperTimers = new Map<number, Text>();
@@ -115,7 +116,7 @@ export class WorldView {
       ...this.docks.map((d) => d.node),
       ...this.trucks.flatMap((t) => [t.node, t.worker.node, t.worker.front, t.held]),
     ]);
-    this.overlay.addChild(this.daylight.blooms, this.fx.layer, this.parcels.timers, this.wobble);
+    this.overlay.addChild(this.daylight.blooms, this.wrap, this.fx.layer, this.parcels.timers, this.wobble);
     if (this.courier) this.overlay.addChild(this.courier.card);
     this.wobbleIcon = new Sprite(atlas.get('icon_glass'));
     this.wobbleIcon.scale.set(0.34);
@@ -272,6 +273,7 @@ export class WorldView {
     this.tooltip.update();
     this.fx.update(dt);
     this.drawWobble(time);
+    this.drawWrap(time);
     this.drawHelperTimers();
     if (dt > 0) this.stepDust();
     this.fx.noText = this.cinematic;
@@ -304,6 +306,26 @@ export class WorldView {
     g.roundRect(x - W / 2 - 2, y - 5, W + 4, 11, 5).fill({ color: 0x1f2937, alpha: 0.9 });
     g.roundRect(x - W / 2, y - 3, W * Math.min(1, w), 7, 3).fill(color);
     this.wobbleIcon.position.set(x - W / 2 - 12, y);
+  }
+
+  /** Bubble wrap (rewarded): a see-through sheet with bubbles around the player's stack. */
+  private drawWrap(time: number): void {
+    const g = this.wrap;
+    g.clear();
+    const p = this.wh.player;
+    if (!this.wh.bubbleActive() || p.stack.length === 0 || this.cinematic) return;
+    const v = this.chars.get(p.id);
+    if (!v) return;
+    const top = this.stackTop(p.id);
+    const x = top.x;
+    const y0 = top.y + PARCEL.d - 4;
+    const y1 = v.y - HANDS_Z * v.node.scale.y + PARCEL.d / 2 + 4;
+    const w = PARCEL.w + 12;
+    g.roundRect(x - w / 2, y0, w, y1 - y0, 8).fill({ color: 0xe0f2fe, alpha: 0.22 });
+    g.roundRect(x - w / 2, y0, w, y1 - y0, 8).stroke({ width: 2, color: 0x7dd3fc, alpha: 0.75 + Math.sin(time * 4) * 0.15 });
+    for (let yy = y0 + 8, r = 0; yy < y1 - 4; yy += 9, r++) {
+      for (let xx = x - w / 2 + 7 + (r % 2) * 4.5; xx < x + w / 2 - 4; xx += 9) g.circle(xx, yy, 2.3).fill({ color: 0xffffff, alpha: 0.45 });
+    }
   }
 
   private drawHelperTimers(): void {

@@ -395,7 +395,9 @@ export type IconName =
   | 'glass'
   | 'bolt'
   | 'box'
-  | 'person';
+  | 'person'
+  | 'cash'
+  | 'bubble';
 
 function person(g: Graphics, x: number, y: number, s: number, shirt: number): void {
   g.roundRect(x - s * 0.42, y - s * 0.05, s * 0.84, s * 0.7, s * 0.25).fill(shirt);
@@ -530,5 +532,30 @@ export function drawIcon(g: Graphics, name: IconName, x: number, y: number, s: n
     case 'box':
       miniBox(g, x, y + s * 0.15, s * 1.4, 0xf59e0b);
       break;
+    case 'cash':
+      // A parcel stuffed with banknotes and a coin on top
+      miniBox(g, x - s * 0.1, y + s * 0.35, s * 1.3, 0xc79a62);
+      for (let i = 0; i < 3; i++) {
+        const bx = x - s * 0.55 + i * s * 0.32;
+        g.roundRect(bx, y - s * 0.55 + i * s * 0.06, s * 0.62, s * 0.34, s * 0.05).fill(0x16a34a).stroke({ width: s * 0.04, color: 0x14532d });
+        g.circle(bx + s * 0.31, y - s * 0.38 + i * s * 0.06, s * 0.09).fill(0xbbf7d0);
+      }
+      drawCoinIcon(g, x + s * 0.55, y - s * 0.55, s * 0.32);
+      break;
+    case 'bubble': {
+      // Sheet of bubble wrap around a fragile glass
+      g.roundRect(x - s * 0.85, y - s * 0.8, s * 1.7, s * 1.5, s * 0.25).fill({ color: 0xe0f2fe, alpha: 0.95 }).stroke({ width: s * 0.06, color: 0x7dd3fc });
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 5; c++) {
+          const bx = x - s * 0.62 + c * s * 0.31 + (r % 2 ? s * 0.15 : 0);
+          const by = y - s * 0.56 + r * s * 0.34;
+          if (bx > x + s * 0.72) continue;
+          g.circle(bx, by, s * 0.11).fill({ color: 0x7dd3fc, alpha: 0.55 });
+          g.circle(bx - s * 0.03, by - s * 0.03, s * 0.035).fill(WHITE);
+        }
+      }
+      drawGlass(g, x, y - s * 0.02, s * 0.9, 0xdc2626);
+      break;
+    }
   }
 }

@@ -357,6 +357,13 @@ export class Game {
     const hint = this.guide.update(dt, wh, this.world, this.camera);
     this.ui.setHint(this.state === 'play' ? hint : null);
     this.updateGoal();
+    // Nothing may scroll the game container (it would shift the whole view and the HUD).
+    if (this.host.scrollTop !== 0 || this.host.scrollLeft !== 0) this.host.scrollTop = this.host.scrollLeft = 0;
+    if (this.celebrate && this.state === 'play' && !this.camera.revealing) {
+      const kind = this.celebrate;
+      this.celebrate = null;
+      void this.celebrationFlow(kind);
+    }
     if (this.state === 'play') this.footsteps();
     Sound.setNight(this.world.daylight.lamps);
     Sound.duck(this.state !== 'play');
@@ -364,6 +371,7 @@ export class Game {
     this.ui.update(dt);
     this.coinTrail.update(dt);
     this.ui.setTurbo(wh.turboActive() ? wh.turboUntil - wh.time : null);
+    this.ui.setBubble(wh.bubbleActive() ? wh.bubbleUntil - wh.time : null);
   }
 
   private payFx(dt: number): void {
@@ -393,6 +401,19 @@ export class Game {
   }
 
   private lastStep = 0;
+
+  /** Celebration waiting for the camera reveal to finish. */
+  private celebrate: 'district' | 'auto' | null = null;
+
+  private async celebrationFlow(kind: 'district' | 'auto'): Promise<void> {
+    this.state = 'screen';
+    Poki.gameplayStop();
+    this.writeSave();
+    if (kind === 'district') await this.ui.showMessage(t('celebrate.district'), t('celebrate.districtText'), t('ui.continue'));
+    else await this.ui.showMessage(t('celebrate.auto'), t('celebrate.autoText'), t('ui.continue'));
+    await this.maybeCommercial();
+    this.state = 'play';
+  }
 
   /** Location progress: milestones (districts, hires, second vans, the move) bought of all. */
   private updateGoal(): void {
@@ -529,6 +550,16 @@ export class Game {
           const pad = wh.pads.find((p) => p.id === e.pad)!;
           const big = pad.def.type !== 'upgrade';
           this.sfx(big ? 'unlock' : 'buy');
+          // Natural pauses: a short celebration after a new district, and when the depot first runs
+          // itself. Never during the tutorial.
+          if (!this.guide.active) {
+            const autoKey = `auto_${wh.loc.id}`;
+            if (pad.def.type === 'district') this.celebrate = 'district';
+            else if (pad.def.type === 'hire' && wh.isAutomated() && !this.data.flags[autoKey]) {
+              this.data.flags[autoKey] = true;
+              this.celebrate = 'auto';
+            }
+          }
           if (big && pad.def.type !== 'move') {
             const miles = wh.pads.filter((p) => p.def.type !== 'upgrade');
             const done = miles.filter((p) => wh.padBought(p.id)).length;
@@ -621,6 +652,25 @@ export class Game {
           break;
         case 'turboEnd':
           this.ui.toast(t('hint.turboEnd'), '', 2000);
+          break;
+        case 'cashBonus': {
+          const from = this.camera.worldToScreen(e.x, e.y - 20);
+          const to = this.ui.coinTarget();
+          world.fx.payout(e.x, e.y - 50, `+${formatCoins(e.amount)}`);
+          world.fx.confetti(e.x, e.y);
+          this.coinTrail.fly(from.x, from.y, to.x, to.y, 12, (i) => {
+            this.ui.bumpCoin();
+            this.sfx('clink', Math.min(12, i));
+          });
+          this.sfx('cash');
+          break;
+        }
+        case 'bubbleStart':
+          this.sfx('buy');
+          this.ui.toast(t('hint.bubble'), t('hint.bubbleOn'), 3000);
+          break;
+        case 'bubbleEnd':
+          this.ui.toast(t('hint.bubbleEnd'), '', 2000);
           break;
         case 'locationComplete':
           void this.locationFlow();

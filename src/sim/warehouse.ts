@@ -9,6 +9,12 @@ import {
   AD_SPOT_PERIOD,
   ASSIST_LIFETIME,
   ASSIST_MAX_MISSING,
+  BUBBLE_COOLDOWN,
+  BUBBLE_DURATION,
+  BUBBLE_LIFETIME,
+  CASH_COOLDOWN,
+  CASH_LIFETIME,
+  CASH_SHARE,
   CAREFUL_SPEED_FACTOR,
   COURIER_BONUS,
   COURIER_FIRST_DELAY,
@@ -107,6 +113,11 @@ export class Warehouse {
   private forceFragile = false;
   turboUntil = 0;
   private turboWasOn = false;
+  /** Bubble wrap from a rewarded ad: the player's fragile parcels do not wobble until then. */
+  bubbleUntil = 0;
+  private bubbleWasOn = false;
+  private cashOfferAt = -Infinity;
+  private bubbleOfferAt = -Infinity;
   nextAdAt = 150;
   adCycle = 0;
   complete = false;
@@ -278,6 +289,10 @@ export class Warehouse {
 
   turboActive(): boolean {
     return this.time < this.turboUntil;
+  }
+
+  bubbleActive(): boolean {
+    return this.time < this.bubbleUntil;
   }
 
   padLevel(pad: Pad): number {
@@ -520,7 +535,7 @@ export class Warehouse {
     c.runTime = c.running ? c.runTime + dt : 0;
     const fragile = c.hasFragile();
     let rate = 0;
-    if (fragile && c.moving) {
+    if (fragile && c.moving && !this.bubbleActive()) {
       const over = c.stack.length > FRAGILE.safeCount || c.runTime > FRAGILE.runGrace;
       if (over) rate = c.careful ? FRAGILE.carefulFactor : 1;
     }
@@ -542,6 +557,7 @@ export class Warehouse {
         this.parcels.delete(p!.id);
         this.stats.broken++;
         this.events.push({ type: 'break', carrier: c.id, parcel: p!.id, district: p!.district, x: c.x, y: c.y, h: i });
+        this.offerBubble();
       }
       c.wobble = FRAGILE.afterBreak;
       this.wobbleWarned = false;
@@ -866,7 +882,11 @@ export class Warehouse {
   private offerAssist(pad: Pad, cost: number): void {
     if (pad.def.type === 'move') return;
     const missing = cost - pad.paid - this.coins;
-    if (missing <= 0 || missing > cost * ASSIST_MAX_MISSING) return;
+    if (missing > cost * ASSIST_MAX_MISSING) {
+      this.offerCash(pad, cost);
+      return;
+    }
+    if (missing <= 0) return;
     const existing = this.adPads.find((a) => a.kind === 'assist');
     if (existing?.target === pad.id) {
       existing.expiresAt = this.time + ASSIST_LIFETIME;
@@ -878,6 +898,32 @@ export class Warehouse {
     this.adPads = this.adPads.filter((a) => a.kind !== 'assist');
     this.adPads.push(new AdPad(`assist:${pad.id}`, 'assist', 'medium', at.x, at.y, this.time + ASSIST_LIFETIME, pad.id));
     this.events.push({ type: 'adPadShown', pad: `assist:${pad.id}`, kind: 'assist' });
+  }
+
+  /** A cash parcel next to a pad that is still far out of reach. */
+  private offerCash(pad: Pad, cost: number): void {
+    if (this.opts.noAds || this.time - this.cashOfferAt < CASH_COOLDOWN) return;
+    if (this.adPads.some((a) => a.kind === 'cash' || a.kind === 'assist')) return;
+    const at = this.freeSpotNear(pad.x, pad.y);
+    if (!at) return;
+    this.cashOfferAt = this.time;
+    const a = new AdPad(`cash:${pad.id}:${Math.round(this.time)}`, 'cash', 'medium', at.x, at.y, this.time + CASH_LIFETIME, null);
+    a.amount = Math.max(10, Math.round((cost * CASH_SHARE) / 5) * 5);
+    this.adPads.push(a);
+    this.events.push({ type: 'adPadShown', pad: a.id, kind: 'cash' });
+  }
+
+  /** Bubble wrap offered right after a fragile parcel broke. */
+  private offerBubble(): void {
+    if (this.opts.noAds || this.opts.noPlayer || this.bubbleActive()) return;
+    if (this.time - this.bubbleOfferAt < BUBBLE_COOLDOWN || this.adPads.some((a) => a.kind === 'bubble')) return;
+    const c = this.player;
+    const at = this.freeSpotNear(c.x, c.y);
+    if (!at) return;
+    this.bubbleOfferAt = this.time;
+    const id = `bubble:${Math.round(this.time)}`;
+    this.adPads.push(new AdPad(id, 'bubble', 'small', at.x, at.y, this.time + BUBBLE_LIFETIME, null));
+    this.events.push({ type: 'adPadShown', pad: id, kind: 'bubble' });
   }
 
   /** A spot next to (x, y) for an extra floor zone that overlaps nothing. */
@@ -907,7 +953,7 @@ export class Warehouse {
   private updateAdPads(dt: number): void {
     const c = this.player;
     // Schedule turbo / helper zones about every 3 minutes, alternating.
-    if (!this.opts.noAds && this.locTime >= this.nextAdAt && !this.adPads.some((a) => a.kind !== 'assist')) {
+    if (!this.opts.noAds && this.locTime >= this.nextAdAt && !this.adPads.some((a) => a.kind === 'turbo' || a.kind === 'helper')) {
       const helperActive = this.workers.some((w) => w.carrier.expiresAt > 0);
       let kind: AdKind | null = this.adCycle % 2 === 0 ? 'helper' : 'turbo';
       if (kind === 'turbo' && this.turboActive()) kind = helperActive ? null : 'helper';
@@ -966,6 +1012,13 @@ export class Warehouse {
       this.events.push({ type: 'turboStart', until: this.turboUntil });
     } else if (a.kind === 'helper') {
       this.spawnWorker(this.helperRole(), this.time + HELPER_DURATION);
+    } else if (a.kind === 'cash') {
+      this.coins += a.amount;
+      this.events.push({ type: 'cashBonus', amount: a.amount, x: a.x, y: a.y });
+    } else if (a.kind === 'bubble') {
+      this.bubbleUntil = Math.max(this.time, this.bubbleUntil) + BUBBLE_DURATION;
+      this.player.wobble = 0;
+      this.events.push({ type: 'bubbleStart', until: this.bubbleUntil });
     } else if (a.kind === 'assist' && a.target) {
       const pad = this.pads.find((p) => p.id === a.target);
       if (!pad || !pad.visible) return;
@@ -999,6 +1052,9 @@ export class Warehouse {
     const on = this.turboActive();
     if (this.turboWasOn && !on) this.events.push({ type: 'turboEnd' });
     this.turboWasOn = on;
+    const b = this.bubbleActive();
+    if (this.bubbleWasOn && !b) this.events.push({ type: 'bubbleEnd' });
+    this.bubbleWasOn = b;
   }
 
   // -------------------------------------------------------------------------------------------

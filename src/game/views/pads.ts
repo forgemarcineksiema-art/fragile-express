@@ -184,12 +184,13 @@ export class AdPadView {
     const badge = new Graphics();
     badge.circle(-r + 18, -r + 16, 16).fill(INK).stroke({ width: 2.5, color: WHITE });
     this.node.addChild(badge, clap);
-    const rewardIcon: IconName = pad.kind === 'turbo' ? 'turbo' : pad.kind === 'helper' ? 'helper' : 'capacity';
+    const rewardIcon: IconName = pad.kind === 'turbo' ? 'turbo' : pad.kind === 'helper' ? 'helper' : pad.kind === 'cash' ? 'cash' : pad.kind === 'bubble' ? 'bubble' : 'capacity';
     const icon = new Sprite(atlas.get(`icon_${rewardIcon}`));
     icon.scale.set(0.72);
     icon.position.set(0, -8);
     this.node.addChild(icon);
-    const text = pad.kind === 'turbo' ? t('ad.turbo') : pad.kind === 'helper' ? t('ad.helper') : t('ad.assist');
+    const text =
+      pad.kind === 'turbo' ? t('ad.turbo') : pad.kind === 'helper' ? t('ad.helper') : pad.kind === 'cash' ? `+${formatCoins(pad.amount)}` : pad.kind === 'bubble' ? t('ad.bubble') : t('ad.assist');
     const caption = label(text, 14);
     caption.position.set(0, 22);
     if (caption.width > AD_PAD_SIZE - 8) caption.scale.set((AD_PAD_SIZE - 8) / caption.width);

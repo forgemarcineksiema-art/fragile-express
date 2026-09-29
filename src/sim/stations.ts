@@ -257,6 +257,8 @@ export class AdPad {
   /** After an ad the player must step out before the zone can trigger again. */
   armed = true;
   pending = false;
+  /** Coins a cash parcel gives. */
+  amount = 0;
 
   constructor(id: string, kind: AdKind, size: AdSize, x: number, y: number, expiresAt: number, target: string | null) {
     this.id = id;

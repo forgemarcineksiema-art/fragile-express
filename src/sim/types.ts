@@ -39,7 +39,7 @@ export type Role = 'player' | 'sorter' | 'loader' | 'collector';
 export type WorkerRole = Exclude<Role, 'player'>;
 export const WORKER_ROLES: readonly WorkerRole[] = ['sorter', 'loader', 'collector'];
 
-export type AdKind = 'turbo' | 'helper' | 'assist';
+export type AdKind = 'turbo' | 'helper' | 'assist' | 'cash' | 'bubble';
 export type AdSize = 'small' | 'medium' | 'large';
 
 /** Events emitted by the simulation for the renderer, audio and UI. */
@@ -66,6 +66,9 @@ export type SimEvent =
   | { type: 'adRequest'; pad: string; kind: AdKind; size: AdSize }
   | { type: 'turboStart'; until: number }
   | { type: 'turboEnd' }
+  | { type: 'cashBonus'; amount: number; x: number; y: number }
+  | { type: 'bubbleStart'; until: number }
+  | { type: 'bubbleEnd' }
   | { type: 'locationComplete' }
   | { type: 'courierArrive' }
   | { type: 'courierHand'; parcel: number; amount: number }

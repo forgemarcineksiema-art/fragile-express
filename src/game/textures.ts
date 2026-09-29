@@ -59,6 +59,8 @@ export const ICONS: IconName[] = [
   'glass',
   'bolt',
   'box',
+  'cash',
+  'bubble',
   'person',
 ];
 

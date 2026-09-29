@@ -188,3 +188,15 @@ export const COURIER_WALK = 2.2;
 export const COURIER_PAY = 4;
 /** Completing the whole order adds this share of its value. */
 export const COURIER_BONUS = 0.5;
+
+// Rewarded offers at the moment of need.
+/** Cash parcel: offered on a pad the player cannot afford (more than the assist share missing). */
+export const CASH_SHARE = 0.4;
+export const CASH_LIFETIME = 12;
+/** Minimum time between two cash offers. */
+export const CASH_COOLDOWN = 150;
+/** Bubble wrap: fragile parcels in the player's stack do not wobble for this long. */
+export const BUBBLE_DURATION = 180;
+/** Offered right after a fragile parcel breaks. */
+export const BUBBLE_LIFETIME = 25;
+export const BUBBLE_COOLDOWN = 120;

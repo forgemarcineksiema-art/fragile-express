@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COURIER_BONUS, COURIER_FIRST_DELAY, COURIER_PAY, COURIER_WALK, FRAGILE, levelCost, payout, playerCapacity } from './economy.ts';
+import { BUBBLE_DURATION, CASH_SHARE, COURIER_BONUS, COURIER_FIRST_DELAY, COURIER_PAY, COURIER_WALK, FRAGILE, levelCost, payout, playerCapacity } from './economy.ts';
 import { LOCATIONS } from './locations.ts';
 import type { LocationJson } from './layout.ts';
 import { NavGraph } from './nav.ts';
@@ -308,6 +308,54 @@ describe('workers', () => {
     expect(wh.workers.length).toBe(n + 1);
     run(wh, 40);
     expect(wh.workers.length).toBe(n);
+  });
+});
+
+describe('rewarded offers at the moment of need', () => {
+  it('offers a cash parcel on a pad that is far out of reach, once in a while', () => {
+    const wh = new Warehouse(loc(), null);
+    const pad = wh.pads.find((p) => p.id === 'p_cap')!;
+    wh.coins = 5; // price 30: far more than half missing
+    place(wh, pad.x, pad.y);
+    run(wh, 2);
+    const cash = wh.adPads.find((a) => a.kind === 'cash')!;
+    expect(cash).toBeDefined();
+    expect(cash.amount).toBe(Math.max(10, Math.round((30 * CASH_SHARE) / 5) * 5));
+    const before = wh.coins;
+    wh.resolveAd(cash.id, true);
+    expect(wh.coins).toBe(before + cash.amount);
+    // Not offered again right away.
+    wh.coins = 0;
+    place(wh, pad.x, pad.y);
+    run(wh, 20);
+    expect(wh.adPads.some((a) => a.kind === 'cash')).toBe(false);
+  });
+
+  it('offers bubble wrap after a break; with it fragile parcels do not wobble', () => {
+    const wh = new Warehouse(loc(), null);
+    wh.fragileActive = true;
+    wh.player.capacity = 12;
+    for (let i = 0; i < 8; i++) wh.player.stack.push(parcel(wh, i === 7 ? 'fragile' : 'normal', 0, true));
+    place(wh, 700, 720);
+    let dir = 1;
+    const zigzag = (): void => {
+      if (wh.player.x > 1000) dir = -1;
+      if (wh.player.x < 500) dir = 1;
+      wh.input = { x: dir, y: 0, careful: false };
+    };
+    run(wh, 20, zigzag);
+    expect(wh.stats.broken).toBeGreaterThan(0);
+    const bubble = wh.adPads.find((a) => a.kind === 'bubble')!;
+    expect(bubble).toBeDefined();
+    wh.resolveAd(bubble.id, true);
+    expect(wh.bubbleActive()).toBe(true);
+    for (let i = 0; i < 3; i++) wh.player.stack.push(parcel(wh, 'fragile', 0, true));
+    const broken = wh.stats.broken;
+    run(wh, 30, zigzag);
+    expect(wh.stats.broken).toBe(broken);
+    expect(wh.player.wobble).toBe(0);
+    run(wh, BUBBLE_DURATION);
+    expect(wh.bubbleActive()).toBe(false);
   });
 });
 

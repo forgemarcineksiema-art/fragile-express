@@ -33,6 +33,8 @@ body {
   position: fixed;
   inset: 0;
   overflow: hidden;
+  /* clip, unlike hidden, cannot be scrolled by focus or scrollIntoView (e.g. around ads) */
+  overflow: clip;
 }
 
 #game canvas {
@@ -216,6 +218,8 @@ body {
 
 .joy-base {
   position: absolute;
+  left: 0;
+  top: 0;
   width: 116px;
   height: 116px;
   margin: -58px 0 0 -58px;
@@ -575,4 +579,9 @@ select.lang {
   .toast {
     top: calc(var(--u) * 14.4);
   }
+}
+
+.badge.bubble {
+  background: #0284c7;
+  box-shadow: 0 3px 0 #075985;
 }

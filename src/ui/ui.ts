@@ -34,6 +34,7 @@ export class UI {
   private readonly hint: HTMLDivElement;
   private readonly toastEl: HTMLDivElement;
   private readonly turbo: HTMLDivElement;
+  private readonly bubble: HTMLDivElement;
   private readonly goal: HTMLDivElement;
   private readonly goalName: HTMLSpanElement;
   private readonly goalCount: HTMLSpanElement;
@@ -76,6 +77,8 @@ export class UI {
     const badges = el('div', 'hud-badges');
     this.turbo = el('div', 'badge');
     badges.appendChild(this.turbo);
+    this.bubble = el('div', 'badge bubble');
+    badges.appendChild(this.bubble);
     this.root.appendChild(badges);
 
     this.pauseBtn = el('button', 'hud-pause', PAUSE_SVG);
@@ -204,6 +207,16 @@ export class UI {
     this.turbo.classList.add('on');
     const txt = `⚡ ${t('ui.turbo')} ×2 · ${formatTime(secondsLeft)}`;
     if (this.turbo.textContent !== txt) this.turbo.textContent = txt;
+  }
+
+  setBubble(secondsLeft: number | null): void {
+    if (secondsLeft === null || secondsLeft <= 0) {
+      this.bubble.classList.remove('on');
+      return;
+    }
+    this.bubble.classList.add('on');
+    const txt = `🫧 ${t('hint.bubble')} · ${formatTime(secondsLeft)}`;
+    if (this.bubble.textContent !== txt) this.bubble.textContent = txt;
   }
 
   setHudVisible(on: boolean): void {
