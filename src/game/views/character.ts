@@ -121,7 +121,8 @@ export class CharacterView {
 
   /** Screen-space offset of the stack base relative to the feet. */
   stackOffset(): { dx: number; front: boolean } {
-    if (this.facing === 'side') return { dx: this.flip * 13, front: true };
+    // Held out in front when walking sideways, so the face stays visible.
+    if (this.facing === 'side') return { dx: this.flip * 26, front: true };
     return { dx: 0, front: this.facing !== 'back' };
   }
 
@@ -203,8 +204,8 @@ export class CharacterView {
     const carrying = c.stack.length > 0 || c.coins > 0;
     const back = next === 'back';
     if (carrying) {
-      this.armL.rotation = next === 'side' ? -2.1 : 2.75;
-      this.armR.rotation = next === 'side' ? -2.1 : -2.75;
+      this.armL.rotation = next === 'side' ? -1.75 : 2.75;
+      this.armR.rotation = next === 'side' ? -1.75 : -2.75;
       this.armL.position.set(next === 'side' ? 3 : -9, -27);
       this.armR.position.set(next === 'side' ? 5 : 9, -27);
     } else {
@@ -292,6 +293,11 @@ export class CharacterView {
     const pop = age < 0.15 ? 0.5 + (age / 0.15) * 0.6 : age < 0.25 ? 1.1 - ((age - 0.15) / 0.1) * 0.1 : 1;
     this.bubble.scale.set(this.bubbleT < 0.15 ? Math.max(0, this.bubbleT / 0.15) : pop);
     if (this.bubbleT <= 0) this.bubble.visible = false;
+  }
+
+  hideBubble(): void {
+    this.bubble.visible = false;
+    this.bubbleT = 0;
   }
 
   destroy(): void {

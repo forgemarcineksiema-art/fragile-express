@@ -102,8 +102,10 @@ postawiłem za pierwszym pracownikiem, bo gracz zna już pętlę i ma monety na 
 - **Repozytorium Fragile Van.** Nie ma go na dysku, więc poki-kit (`src/poki`), kod vana i paczek
   (`src/game/art.ts`) oraz helpery (`src/core`) napisałem od nowa, bez zależności od gry, tak żeby dało się
   je przenieść. Po podaniu ścieżki podmienię rysowanie vana na to z Fragile Van dla spójności marki.
-- Miniatura animowana. Statyczną wersję roboczą (`promo/thumbnail_628.png`) i zrzut ekranu
-  (`promo/screenshot.png`) generuje `__dev.thumbnails()` w `npm run dev`; ostateczną warto dopracować ręcznie.
+- Miniatury są nagrywane z gry przez `__dev.thumbnails()` (`npm run dev`): statyczna bez tekstu
+  (`promo/thumbnail_1080.png`) i animowana (`promo/animated_thumbnail_1080.mp4`: 1080×1080, 60 fps, 5 s,
+  3 sceny: bieg z chwiejnym stosem i stłuczka, załadunek i odjazd vana, cała hala w ruchu). Wymagania
+  Poki: statyczna ≥ 628×628 bez tekstu; animowana MP4 1080×1080, ≥ 50 fps, 4–6 s, 2–3 sceny, bez UI.
 - Pomiar 60 FPS przy 4× spowolnieniu CPU w Chrome DevTools i test na prawdziwym telefonie.
 - Odsłuch dźwięków na urządzeniach: efekty są syntezowane, ale nie słyszałem ich na żywo.
 
@@ -114,3 +116,24 @@ postawiłem za pierwszym pracownikiem, bo gracz zna już pętlę i ma monety na 
 2. Strojenie z nagrań, najpierw pierwsze 3 minuty (ceny w `locations/poczta.json`, stałe w
    `src/sim/economy.ts`), zawsze z kontrolą w `npm run pacing`.
 3. Miniatury, a potem drugi Player Fit.
+
+## Druga runda (po uwagach z testu)
+
+- **Vany:** kurs skrócony do 3 s, a przy rampie stoi paleta. Gdy vana nie ma, paczki idą na paletę i
+  same ładują się do następnego vana, więc gracz i ładowacze nie stoją przy rampie. Nad paletą widać, za
+  ile wróci van.
+- **Płynność:** gracz i pracownicy przyspieszają i hamują zamiast skokowo zmieniać prędkość; przejście
+  bieg ↔ ostrożny chód jest płynne. Zasady kruchych paczek bez zmian.
+- **Fizyka stosu:** łańcuch sprężyn (każda paczka podąża za tą pod nią), więc stos zamiata przy ruszaniu i
+  hamowaniu; paczki sprężynują przy lądowaniu, opadają po wyjęciu środkowej, na regałach i palecie leżą
+  lekko krzywo, z ciężarówki spadają na taśmę.
+- **Vany:** osobne koła na szprychach, zawieszenie (van przysiada przy każdej paczce i przy hamowaniu),
+  cofanie do rampy ze światłami i piskiem, spaliny przy odjeździe.
+- **Postacie:** dłonie trzymające stos, włosy, kask ładowacza, pochylenie w biegu, sprężynowanie kroku,
+  mruganie, dymki („!” przy stłuczce, „$” przy kasie, powitanie nowego pracownika); przy chodzie bokiem
+  stos jest trzymany przed postacią, więc widać twarz.
+- **Otoczenie:** zegar, plakaty, tablica, mapa dzielnic i gaśnica na ścianie, światło z okien i lamp,
+  przetarcia podłogi, winieta.
+- **Ceny przestrojone** do szybszej pętli (symulator, mediana z 5 przebiegów): Poczta — pierwsza dzielnica
+  1:15, pierwszy pracownik 3:03, automatyzacja 9:12, przejście 20:34; Sortownia — przejście 18:33.
+

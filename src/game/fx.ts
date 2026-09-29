@@ -154,7 +154,11 @@ export class Fx {
     this.add({ s, x: x + (Math.random() - 0.5) * 6, y: y + (Math.random() - 0.5) * 6, z: 5, vx: -12 - Math.random() * 18, vy: (Math.random() - 0.5) * 16, vz: 22 + Math.random() * 14, max: 0.45 + Math.random() * 0.2, grow: 1.3 });
   }
 
+  /** Suppresses floating texts (cinematic mode). */
+  noText = false;
+
   float(x: number, y: number, text: string, color = 0xfde047, size = 20): void {
+    if (this.noText) return;
     const t = this.textPool.pop() ?? label('', size);
     t.text = text;
     t.style.fill = color;

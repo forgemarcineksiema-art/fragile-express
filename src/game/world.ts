@@ -169,6 +169,23 @@ export class WorldView {
     return { x: v.x + v.stackOffset().dx, y: v.y - h - PARCEL.d };
   }
 
+  /** Hides prices, counters, bubbles and other overlays (thumbnails and trailers). */
+  cinematic = false;
+
+  private applyCinematic(): void {
+    for (const p of this.pads) p.node.visible = false;
+    for (const a of this.adPads.values()) a.node.visible = false;
+    this.tooltip.node.visible = false;
+    this.guideArrow.visible = false;
+    this.wobble.visible = false;
+    this.wobbleIcon.visible = false;
+    this.parcels.timers.visible = false;
+    for (const t of this.helperTimers.values()) t.visible = false;
+    for (const s of this.shelves) s.hideLabels();
+    for (const d of this.docks) d.hideLabels();
+    for (const c of this.chars.values()) c.hideBubble();
+  }
+
   update(dt: number, alpha: number, time: number): void {
     const wh = this.wh;
     this.syncCharacters();
@@ -194,6 +211,8 @@ export class WorldView {
     this.fx.update(dt);
     this.drawWobble(time);
     this.drawHelperTimers();
+    this.fx.noText = this.cinematic;
+    if (this.cinematic) this.applyCinematic();
   }
 
   private drawWobble(time: number): void {

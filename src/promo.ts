@@ -1,107 +1,267 @@
-// Development-only: stages a scene in the live game and saves Poki thumbnails into promo/ through the
-// dev server (POST /__promo). Run __dev.thumbnails() in the console of `npm run dev`.
-import { Container, Graphics, Rectangle, Text, type Application } from 'pixi.js';
-import { drawGlass } from './game/art.ts';
-import type { Atlas } from './game/atlas.ts';
-import { FONT } from './game/text.ts';
-import type { Parcel } from './sim/types.ts';
-import type { Warehouse } from './sim/warehouse.ts';
+// Development-only: stages scenes in the live game and records Poki store assets through the dev
+// server (POST /__promo): a text-free static thumbnail and an animated MP4 thumbnail.
+// Poki specs: static ≥ 628×628, square, no text; animated 1080×1080, ≥ 50 fps, 4–6 s, .mp4,
+// 2–3 scenes of 1–2 s, no UI. Run __dev.thumbnails() in the console of `npm run dev`.
+import { ArrayBufferTarget, Muxer } from 'mp4-muxer';
+import { Rectangle, type Application } from 'pixi.js';
+import type { Camera } from './game/camera.ts';
+import type { WorldView } from './game/world.ts';
+import { PlayerBot } from './sim/bot.ts';
+import { getLocation } from './sim/locations.ts';
+import type { Parcel, ParcelKind } from './sim/types.ts';
+import { Warehouse } from './sim/warehouse.ts';
 
-async function save(canvas: HTMLCanvasElement, name: string): Promise<void> {
-  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'));
-  if (!blob) throw new Error('toBlob failed');
-  await fetch(`/__promo?name=${encodeURIComponent(name)}`, { method: 'POST', body: blob });
-}
-
-function logo(width: number): Container {
-  const c = new Container();
-  const title = new Text({
-    text: 'FRAGILE EXPRESS',
-    style: {
-      fontFamily: FONT,
-      fontSize: 64,
-      fontWeight: '900',
-      fill: 0xffffff,
-      stroke: { color: 0x7c2d12, width: 12, join: 'round' },
-      dropShadow: { color: 0x000000, alpha: 0.35, distance: 6, angle: Math.PI / 2, blur: 2 },
-      letterSpacing: 2,
-    },
-    resolution: 2,
-  });
-  title.anchor.set(0.5, 0);
-  const scale = Math.min(1, (width - 150) / title.width);
-  title.scale.set(scale);
-  const badge = new Graphics();
-  const r = 34 * scale + 10;
-  badge.circle(0, 0, r).fill(0xdc2626).stroke({ width: 6, color: 0xffffff });
-  drawGlass(badge, 0, 0, r * 1.3, 0xffffff);
-  badge.position.set(-title.width / 2 - r + 6, title.height / 2);
-  c.addChild(badge, title);
-  return c;
+interface Intent {
+  x: number;
+  y: number;
+  careful: boolean;
 }
 
 export interface PromoHost {
   app: Application;
-  atlas: Atlas;
   wh: Warehouse;
+  world: WorldView;
+  camera: Camera;
+  input: { read: () => Intent };
   frame: (dt: number) => void;
-  camera: { fixedZoom: number | null; resize: (w: number, h: number) => void; snap: (x: number, y: number) => void; viewW: number; viewH: number };
+  enterLocation: (wh: Warehouse) => void;
 }
 
-/** Builds a showcase moment: a tall wobbling stack with fragile parcels next to a van. */
-export async function makeThumbnails(host: PromoHost): Promise<string[]> {
-  const { app, wh } = host;
-  const p = wh.player;
-  // Stage the player: tall mixed stack, fragile parcels near the top, wobbling hard.
-  for (const q of p.stack) wh.parcels.delete(q.id);
-  p.stack = [];
-  const kinds: Parcel['kind'][] = ['normal', 'normal', 'normal', 'express', 'normal', 'normal', 'fragile', 'normal', 'fragile', 'normal', 'fragile'];
-  kinds.forEach((kind, i) => {
-    const parcel: Parcel = { id: 800000 + i, district: i % 3 === 1 ? 1 : 0, kind, sorted: true, deadline: wh.time + 40, onTime: false, hop: 0 };
-    wh.parcels.set(parcel.id, parcel);
-    p.stack.push(parcel);
-  });
-  p.capacity = 20;
-  wh.fragileActive = true;
-  const dock = wh.docks[0]!;
-  p.x = p.px = dock.geom.stand.x - 120;
-  p.y = p.py = dock.geom.stand.y + 60;
-  p.dirX = 1;
-  p.dirY = 0.15;
-  wh.piles[0]!.value = 40 * wh.loc.multiplier * 5;
-  p.wobble = 0.82;
-  p.moving = true;
-  // Let views settle (parcels finish their hops) without moving the sim.
-  const saved = wh.step.bind(wh);
-  (wh as unknown as { step: (dt: number) => void }).step = () => {};
-  for (let i = 0; i < 40; i++) host.frame(1 / 60);
+const FPS = 60;
+const OUT = 1080;
 
-  const cam = host.camera;
-  const shots: string[] = [];
-  const shoot = async (name: string, w: number, h: number, zoom: number, cx: number, cy: number, withLogo: boolean): Promise<void> => {
-    cam.fixedZoom = zoom;
-    cam.resize(app.screen.width, app.screen.height);
-    cam.snap(cx, cy);
-    host.frame(1 / 60);
-    const overlay = logo(w);
-    overlay.position.set(app.screen.width / 2, app.screen.height / 2 - h / 2 + 18);
-    overlay.visible = withLogo;
-    app.stage.addChild(overlay);
-    app.render();
-    const frame = new Rectangle(Math.round(app.screen.width / 2 - w / 2), Math.round(app.screen.height / 2 - h / 2), w, h);
-    const canvas = app.renderer.extract.canvas({ target: app.stage, frame, resolution: 1 }) as HTMLCanvasElement;
-    app.stage.removeChild(overlay);
-    overlay.destroy({ children: true });
-    await save(canvas, name);
-    shots.push(name);
-  };
-  const fx = p.x + 130;
-  const fy = p.y - 90;
-  const side = Math.min(628, app.screen.width, app.screen.height);
-  await shoot(`thumbnail_${side}.png`, side, side, 1.3 * (side / 628), fx, fy, true);
-  await shoot('screenshot.png', app.screen.width, app.screen.height, 1.1, fx - 120, fy + 20, false);
-  cam.fixedZoom = null;
-  cam.resize(app.screen.width, app.screen.height);
-  (wh as unknown as { step: (dt: number) => void }).step = saved;
-  return shots;
+async function post(blob: Blob, name: string): Promise<void> {
+  await fetch(`/__promo?name=${encodeURIComponent(name)}`, { method: 'POST', body: blob });
+}
+
+/** A scripted stage: builds the depot, then scenes drive the player and the camera frame by frame. */
+class Stage {
+  intent: Intent = { x: 0, y: 0, careful: false };
+  private nextId = 900000;
+
+  constructor(private readonly h: PromoHost) {}
+
+  get wh(): Warehouse {
+    return this.h.wh;
+  }
+
+  build(): void {
+    const wh = new Warehouse(getLocation('poczta'), null, { seed: 7, noAds: true });
+    Object.assign(wh.levels, {
+      'player.capacity': 4,
+      district1: 1,
+      hire_sorter: 1,
+      hire_loader: 1,
+      hire_collector: 1,
+      'sorter.capacity': 2,
+      'loader.capacity': 2,
+      'belt.speed': 2,
+    });
+    wh.applyLevels();
+    wh.fragileActive = true;
+    // Warm up headless so shelves, belt and workers look busy.
+    const bot = new PlayerBot(wh);
+    for (let t = 0; t < 70; t += 1 / 60) {
+      bot.update(1 / 60);
+      wh.step(1 / 60);
+    }
+    wh.drainEvents();
+    this.h.enterLocation(wh);
+    this.h.world.cinematic = true;
+    this.h.input.read = () => this.intent;
+  }
+
+  /** Replaces the player's stack. */
+  stack(kinds: [ParcelKind, number, boolean][]): void {
+    const wh = this.wh;
+    const p = wh.player;
+    for (const q of p.stack) wh.parcels.delete(q.id);
+    p.stack = [];
+    for (const [kind, district, sorted] of kinds) {
+      const parcel: Parcel = { id: this.nextId++, district, kind, sorted, deadline: 0, onTime: false, hop: 0 };
+      wh.parcels.set(parcel.id, parcel);
+      p.stack.push(parcel);
+    }
+    p.capacity = Math.max(p.capacity, kinds.length);
+  }
+
+  place(x: number, y: number): void {
+    const p = this.wh.player;
+    p.x = p.px = x;
+    p.y = p.py = y;
+    p.vx = p.vy = 0;
+  }
+
+  /** Points the camera so that `span` world units fill the square capture. */
+  aim(x: number, y: number, span: number, side: number): void {
+    const cam = this.h.camera;
+    cam.fixedZoom = side / span;
+    cam.resize(this.h.app.screen.width, this.h.app.screen.height);
+    cam.pin = { x, y };
+  }
+}
+
+interface Scene {
+  frames: number;
+  /** World units across the square capture. */
+  span: number;
+  setup: (s: Stage) => void;
+  /** Called before every frame; `i` counts from 0 within the scene. */
+  tick: (s: Stage, i: number) => void;
+  focus: (s: Stage) => { x: number; y: number };
+}
+
+const SCENES: Scene[] = [
+  // 1. Running with a tall wobbling stack; the top fragile parcel shatters.
+  {
+    frames: 108,
+    span: 430,
+    setup: (s) => {
+      s.stack([
+        ['normal', 0, false],
+        ['normal', 1, false],
+        ['normal', 0, false],
+        ['express', 1, false],
+        ['normal', 0, false],
+        ['fragile', 1, false],
+        ['normal', 0, false],
+        ['fragile', 0, false],
+        ['normal', 1, false],
+      ]);
+      s.place(230, 445);
+      s.wh.player.wobble = 0.3;
+      s.intent = { x: 1, y: 0.02, careful: false };
+    },
+    tick: () => {},
+    focus: (s) => ({ x: s.wh.player.x + 30, y: s.wh.player.y - 95 }),
+  },
+  // 2. Loading the van: parcels hop in, the van dips, fills and drives off leaving coins.
+  {
+    frames: 102,
+    span: 560,
+    setup: (s) => {
+      const dock = s.wh.docks[0]!;
+      const van = dock.vans[0]!;
+      van.state = 'loading';
+      van.t = 0;
+      for (const q of van.items) s.wh.parcels.delete(q.id);
+      van.items = [];
+      for (const q of dock.pallet) s.wh.parcels.delete(q.id);
+      dock.pallet = [];
+      s.stack([
+        ['normal', 0, true],
+        ['normal', 0, true],
+        ['fragile', 0, true],
+        ['normal', 0, true],
+        ['normal', 0, true],
+        ['normal', 0, true],
+        ['normal', 0, true],
+        ['fragile', 0, true],
+      ]);
+      s.wh.player.wobble = 0;
+      s.place(dock.geom.stand.x - 110, dock.geom.stand.y + 10);
+      s.intent = { x: 1, y: -0.05, careful: true };
+    },
+    tick: (s, i) => {
+      if (i === 14) s.intent = { x: 1, y: -0.05, careful: false };
+      if (i === 30) s.intent = { x: 0, y: 0, careful: false };
+    },
+    focus: (s) => ({ x: s.wh.docks[0]!.geom.bay.x - 70, y: s.wh.docks[0]!.geom.y - 10 }),
+  },
+  // 3. The whole depot running on its own.
+  {
+    frames: 90,
+    span: 820,
+    setup: (s) => {
+      s.stack([]);
+      s.place(470, 250);
+      s.intent = { x: 0, y: 0, careful: false };
+    },
+    tick: () => {},
+    focus: () => ({ x: 760, y: 480 }),
+  },
+];
+
+export async function makeThumbnails(host: PromoHost): Promise<string[]> {
+  const app = host.app;
+  const orig = host.input.read;
+  app.ticker.stop();
+  const side = Math.floor(Math.min(app.screen.width, app.screen.height));
+  const frameRect = new Rectangle(Math.floor((app.screen.width - side) / 2), Math.floor((app.screen.height - side) / 2), side, side);
+  const grab = (): HTMLCanvasElement =>
+    app.renderer.extract.canvas({ target: app.stage, frame: frameRect, resolution: OUT / side }) as HTMLCanvasElement;
+  const saved: string[] = [];
+  const stage = new Stage(host);
+  stage.build();
+
+  const muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: { codec: 'avc', width: OUT, height: OUT, frameRate: FPS },
+    fastStart: 'in-memory',
+  });
+  let failure: unknown = null;
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => {
+      failure = e;
+    },
+  });
+  encoder.configure({ codec: 'avc1.640033', width: OUT, height: OUT, bitrate: 16_000_000, framerate: FPS });
+  let n = 0;
+  let still: HTMLCanvasElement | null = null;
+  for (let si = 0; si < SCENES.length; si++) {
+    const sc = SCENES[si]!;
+    sc.setup(stage);
+    for (let i = 0; i < sc.frames; i++) {
+      sc.tick(stage, i);
+      const f = sc.focus(stage);
+      stage.aim(f.x, f.y, sc.span, side);
+      host.frame(1 / FPS);
+      app.render();
+      if (si === 0 && i === 52) {
+        // Static thumbnail: a tighter shot mid-run, stack swaying, just before the crack.
+        stage.aim(f.x + 30, f.y + 5, 370, side);
+        host.camera.update(0, 0, 0, 0, 0);
+        host.camera.apply(host.world.root, 0);
+        app.render();
+        const shot = grab();
+        still = document.createElement('canvas');
+        still.width = still.height = OUT;
+        still.getContext('2d')!.drawImage(shot, 0, 0, OUT, OUT);
+        stage.aim(f.x, f.y, sc.span, side);
+        host.camera.update(0, 0, 0, 0, 0);
+        host.camera.apply(host.world.root, 0);
+        app.render();
+      }
+      const canvas = grab();
+      const vf = new VideoFrame(canvas, { timestamp: Math.round((n * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+      encoder.encode(vf, { keyFrame: n % FPS === 0 });
+      vf.close();
+      n++;
+      while (encoder.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 5));
+    }
+  }
+  await encoder.flush();
+  encoder.close();
+  if (failure) throw failure;
+  muxer.finalize();
+  await post(new Blob([muxer.target.buffer], { type: 'video/mp4' }), 'animated_thumbnail_1080.mp4');
+  saved.push('animated_thumbnail_1080.mp4');
+  if (still) {
+    const s: HTMLCanvasElement = still;
+    const png = await new Promise<Blob | null>((r) => s.toBlob(r, 'image/png'));
+    if (png) {
+      await post(png, 'thumbnail_1080.png');
+      saved.push('thumbnail_1080.png');
+    }
+  }
+
+  // Back to normal play.
+  host.input.read = orig;
+  host.world.cinematic = false;
+  host.camera.fixedZoom = null;
+  host.camera.pin = null;
+  host.camera.resize(app.screen.width, app.screen.height);
+  app.ticker.start();
+  return saved;
 }

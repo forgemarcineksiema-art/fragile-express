@@ -208,6 +208,13 @@ export class DockView {
     };
   }
 
+  hideLabels(): void {
+    this.loadText.visible = false;
+    this.bar.visible = false;
+    this.badge.visible = false;
+    this.badgeIcon.visible = false;
+  }
+
   get palletZ(): number {
     return this.palletNode.zIndex;
   }
@@ -264,6 +271,7 @@ export class DockView {
     }
     const show = (!atBay || atBay.state === 'leaving') && eta < Infinity;
     this.badgeIcon.visible = show;
+    this.badge.visible = true;
     if (show) {
       this.badgeDrawn = true;
       const p = d.geom.pallet;

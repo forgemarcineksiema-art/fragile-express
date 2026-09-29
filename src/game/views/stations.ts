@@ -127,6 +127,10 @@ export class ShelfView {
     return this.node.zIndex;
   }
 
+  hideLabels(): void {
+    this.count.visible = false;
+  }
+
   get shelfItems(): readonly import('../../sim/types.ts').Parcel[] {
     return this.shelf.items;
   }

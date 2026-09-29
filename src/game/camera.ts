@@ -64,9 +64,9 @@ export class Camera {
 
   update(dt: number, fx: number, fy: number, vx: number, vy: number): void {
     if (this.pin) {
+      // Pinned shots frame exactly (the capture may be narrower than the screen).
       this.x = this.pin.x;
       this.y = this.pin.y;
-      this.clampToBounds();
       return;
     }
     const r = this.reveal;

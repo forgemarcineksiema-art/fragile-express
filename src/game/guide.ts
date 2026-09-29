@@ -76,6 +76,11 @@ export class Guide {
   /** Returns the hint text to show (null for none). */
   update(dt: number, wh: Warehouse, world: WorldView, cam: Camera): string | null {
     this.bob += dt;
+    if (world.cinematic) {
+      world.guideArrow.visible = false;
+      this.edge.visible = false;
+      return null;
+    }
     let target: Vec | null = null;
     let hint: string | null = null;
     while (this.step < STEPS.length && STEPS[this.step]!.done(wh, this)) {
