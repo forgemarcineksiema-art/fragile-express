@@ -211,3 +211,21 @@ Przegląd całej gry w 16:9 i poprawki tego, co najbardziej odstawało:
   a nie na środku ekranu.
 - Koszt: ok. 2,1–2,8 ms na klatkę w Hubie (statyczne podłoże we własnej grupie renderowania),
   paczka 794 KB.
+
+## Siódma runda: wysokie stosy, telefony, dźwięk, parkingi zachodnie
+
+- **Wysokie stosy:** gdy gracz niesie wysoką wieżę, kamera płynnie patrzy wyżej i oddala się (do 0,68×),
+  żeby cały stos i pasek chybotania były na ekranie; wraca, gdy stos maleje.
+- **Telefony w pionie:** napisy w świecie tworzone są do 1,45× większe, gdy ekran pokazuje świat w
+  pomniejszeniu; ceny na polach zakupu mieszczą się w polu; na ekranach dotykowych licznik monet nie
+  wchodzi w róg, w którym Poki pokazuje swój przycisk.
+- **Dźwięk od nowa:** efekty brzmią fizycznie zamiast pisków (tektura, marimba rosnąca z wysokością stosu,
+  dzwoneczki FM dla monet, silnik diesla vana, hamulce pneumatyczne, cichy sygnał cofania), kroki gracza,
+  cichy szum hali i świerszcze w nocy. Dźwięki ze świata są w stereo według miejsca na ekranie i cichną
+  poza nim, więc dalekie rampy nie hałasują; klakson tylko czasem. Kompresor na wyjściu zapobiega
+  przesterowaniu. Poziomy zbalansowane pomiarem offline (RMS i szczyt każdego efektu). Nowa muzyka:
+  groove 100 BPM (perkusja, bas, klawisze, zmieniające się melodie, forma 32 taktów, wyciszenie co trzeci
+  przebieg), łagodniejsza w nocy i przytłumiona na pauzie.
+- **Parkingi na zachodzie:** auta wjeżdżają z drogi dojazdowej prosto na miejsce, potem wycofują się,
+  zawracają i odjeżdżają (albo wyjeżdżają przodem, jeśli wcześniej wjechały tyłem).
+- Koszt: ok. 2,6–3,1 ms na klatkę w Hubie, paczka 798 KB.
