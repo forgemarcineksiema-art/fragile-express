@@ -136,6 +136,8 @@ export interface LocationJson {
   props?: PropJson[];
   /** Hazard-painted floor areas [x, y, w, h]. */
   paint?: [number, number, number, number][];
+  /** Where the courier waits for his order (a door in the front wall behind him). */
+  courier?: [number, number];
   pads: PadJson[];
 }
 
@@ -204,7 +206,12 @@ export interface Layout {
   extra: Rect[];
   waypoints: Vec[];
   spawn: Vec;
+  /** Courier pickup: where he stands, the door he uses and the hand-over zone. */
+  courier: { spot: Vec; door: Vec; zone: Rect } | null;
 }
+
+/** Hand-over zone around the courier. */
+export const COURIER_ZONE = { w: 104, h: 84 };
 
 const centred = (cx: number, cy: number, w: number, h: number): Rect => rect(cx - w / 2, cy - h / 2, w, h);
 
@@ -295,6 +302,13 @@ export function buildLayout(loc: LocationJson): Layout {
     ],
     waypoints: loc.waypoints.map(([x, y]) => ({ x, y })),
     spawn: { x: loc.spawn[0], y: loc.spawn[1] },
+    courier: loc.courier
+      ? {
+          spot: { x: loc.courier[0], y: loc.courier[1] },
+          door: { x: loc.courier[0], y: h - WALL / 2 },
+          zone: centred(loc.courier[0], loc.courier[1] - 6, COURIER_ZONE.w, COURIER_ZONE.h),
+        }
+      : null,
   };
 }
 

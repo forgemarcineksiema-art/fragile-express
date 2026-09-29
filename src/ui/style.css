@@ -117,7 +117,7 @@ body {
 .hud-badges {
   position: absolute;
   left: calc(var(--u) * 1);
-  top: calc(var(--u) * 4.4);
+  top: calc(var(--u) * 10.4);
   display: flex;
   flex-direction: column;
   gap: calc(var(--u) * 0.4);
@@ -457,5 +457,122 @@ select.lang {
 @media (pointer: coarse) {
   .hud-coins {
     left: calc(var(--u) * 1 + 66px);
+  }
+}
+
+/* ---------------- Location progress and next goal ---------------- */
+
+.hud-goal {
+  position: absolute;
+  left: calc(var(--u) * 1);
+  top: calc(var(--u) * 4.4);
+  min-width: calc(var(--u) * 13);
+  max-width: calc(var(--u) * 20);
+  padding: calc(var(--u) * 0.45) calc(var(--u) * 0.8) calc(var(--u) * 0.5);
+  border-radius: calc(var(--u) * 1);
+  background: rgba(31, 41, 55, 0.78);
+  color: #fff;
+  font-size: calc(var(--u) * 1.05);
+  pointer-events: none;
+}
+
+.hud-goal .g-head {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(var(--u) * 0.8);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.hud-goal .g-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hud-goal .g-count {
+  color: #fde047;
+}
+
+.hud-goal .g-bar {
+  height: calc(var(--u) * 0.5);
+  margin: calc(var(--u) * 0.35) 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.hud-goal .g-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+  transition: width 0.6s ease-out;
+}
+
+.hud-goal .g-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: calc(var(--u) * 0.6);
+  font-size: calc(var(--u) * 0.95);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.hud-goal .g-next.ok {
+  color: #fde047;
+  opacity: 1;
+  animation: goal-ready 1.2s ease-in-out infinite;
+}
+
+.hud-goal .g-price {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.25);
+  font-weight: 900;
+}
+
+.hud-goal .g-price .coin-ico {
+  width: calc(var(--u) * 1.05);
+  height: calc(var(--u) * 1.05);
+}
+
+.hud-goal.pop {
+  animation: goal-pop 0.5s ease-out;
+}
+
+@keyframes goal-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes goal-ready {
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@media (pointer: coarse) {
+  .hud-goal {
+    left: calc(var(--u) * 1 + 66px);
+  }
+}
+
+/* Narrow (portrait) screens: the top row is taken by coins, goal card and pause, so hints and
+   toasts go below the goal card. */
+@media (max-width: 560px) {
+  .hud-hint {
+    top: calc(var(--u) * 10.8);
+  }
+
+  .toast {
+    top: calc(var(--u) * 14.4);
   }
 }

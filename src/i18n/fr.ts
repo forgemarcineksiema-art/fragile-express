@@ -49,6 +49,12 @@ export const fr: Dict = {
   'hint.move': 'Un dépôt plus grand t’attend !',
   'hint.helperGone': 'Ton assistant est rentré chez lui',
   'hint.turboEnd': 'Le turbo est terminé',
+  'goal.done': 'Étape {n}/{total} réussie !',
+  'hint.courier': 'Un coursier attend sa commande !',
+  'hint.courierIntro': 'Les commandes de coursier paient ×4 : apporte-lui les colis de sa carte !',
+  'hint.coins': 'Des pièces attendent près du quai',
+  'hint.shelfFull': 'Une étagère est pleine : porte les colis au fourgon',
+  'hint.beltFull': 'Le tapis est plein : récupère les colis',
 
   'ui.pause': 'Pause',
   'ui.paused': 'Pause',

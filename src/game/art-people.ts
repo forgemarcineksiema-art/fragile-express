@@ -7,7 +7,7 @@ import type { Graphics } from 'pixi.js';
 import { drawGlass } from './art.ts';
 import { INK, WHITE, shade } from './palette.ts';
 
-export type Outfit = 'player' | 'sorter' | 'loader' | 'collector' | 'helper';
+export type Outfit = 'player' | 'sorter' | 'loader' | 'collector' | 'helper' | 'courier';
 export type Facing = 'front' | 'side' | 'back';
 export type Mood = 'normal' | 'happy' | 'worried' | 'shock';
 /** Face variants: moods plus eyes closed for blinking. */
@@ -53,6 +53,7 @@ export const OUTFITS: Record<Outfit, OutfitStyle> = {
   loader: { shirt: 0x3b5ea8, pants: 0x2c4a8c, sleeve: 0x3b5ea8, forearm: 0x3b5ea8, glove: 0x8a5a2b, hat: 'hardhat', hatColor: 0xf2c230, shoes: 0x4a3526 },
   collector: { shirt: 0xf3f4f6, pants: 0x25272d, sleeve: 0xf3f4f6, forearm: 0xf3f4f6, glove: null, hat: 'cap', hatColor: 0x9c6a12, shoes: 0x1b1b1f },
   helper: { shirt: 0x7a3db8, pants: 0x4a4f5a, sleeve: 0x7a3db8, forearm: 0x7a3db8, glove: null, hat: 'cap', hatColor: 0x5b2b8c, shoes: 0x2a2a2e },
+  courier: { shirt: 0x0f766e, pants: 0x1f2937, sleeve: 0x0f766e, forearm: 0x0f766e, glove: 0x1f2937, hat: 'cap', hatColor: 0x115e59, shoes: 0x111827 },
 };
 
 const LINE = { width: 0.9, color: INK, alpha: 0.42 };
@@ -299,6 +300,28 @@ export function drawTorsoOutfit(g: Graphics, x: number, y: number, outfit: Outfi
           g.ellipse(-3.4, -19.2, 2.8, 2.6).fill(dark);
           g.roundRect(0.6, -8.8, 4, 5.4, 1.6).fill(dark);
         }
+        shading(g, facing);
+        band(g, -2.4, 2.4, dark, facing);
+        break;
+      }
+      case 'courier': {
+        // Softshell courier jacket: zip, reflective chest band, radio on the shoulder strap
+        path().fill(s.shirt);
+        const dark = shade(s.shirt, 0.7);
+        if (front) {
+          g.rect(-0.6, -20.6, 1.2, 18).fill(dark);
+          g.ellipse(0, -20.4, 4.6, 1.6).fill(dark);
+          g.roundRect(4.2, -17.6, 3.2, 5, 1).fill(0x1f2937);
+          g.rect(5.2, -19.2, 0.8, 1.8).fill(0x1f2937);
+        } else if (back) {
+          g.ellipse(0, -20.4, 4.6, 1.6).fill(dark);
+          g.roundRect(-4.6, -16, 9.2, 5, 1.2).fill({ color: 0xffffff, alpha: 0.85 });
+          g.rect(-3.4, -14.2, 6.8, 1.2).fill(s.shirt);
+        } else {
+          g.ellipse(2.4, -20, 2.6, 1.5).fill(dark);
+          g.roundRect(1.2, -17.6, 2.8, 4.6, 1).fill(0x1f2937);
+        }
+        band(g, -12.5, 1.6, 0xd8dde3, facing);
         shading(g, facing);
         band(g, -2.4, 2.4, dark, facing);
         break;

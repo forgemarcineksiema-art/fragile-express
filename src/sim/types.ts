@@ -17,6 +17,24 @@ export interface Parcel {
   hop: number;
 }
 
+/** One line of a courier order: a parcel of this district (fragile if asked for). */
+export interface CourierItem {
+  district: number;
+  fragile: boolean;
+  /** Id of the parcel handed over for this line, or null while still wanted. */
+  parcel: number | null;
+}
+
+export interface CourierOrder {
+  items: CourierItem[];
+  /** Sim time the courier gives up (set when he reaches the counter). */
+  deadline: number;
+  /** Seconds he waits. */
+  wait: number;
+  /** What the whole order pays, for display. */
+  value: number;
+}
+
 export type Role = 'player' | 'sorter' | 'loader' | 'collector';
 export type WorkerRole = Exclude<Role, 'player'>;
 export const WORKER_ROLES: readonly WorkerRole[] = ['sorter', 'loader', 'collector'];
@@ -48,4 +66,8 @@ export type SimEvent =
   | { type: 'adRequest'; pad: string; kind: AdKind; size: AdSize }
   | { type: 'turboStart'; until: number }
   | { type: 'turboEnd' }
-  | { type: 'locationComplete' };
+  | { type: 'locationComplete' }
+  | { type: 'courierArrive' }
+  | { type: 'courierHand'; parcel: number; amount: number }
+  | { type: 'courierDone'; bonus: number }
+  | { type: 'courierLeave'; complete: boolean };

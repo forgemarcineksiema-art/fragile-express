@@ -62,6 +62,29 @@ export class ParcelLayer {
     private readonly wh: Warehouse,
   ) {}
 
+  /** The courier's figure, when the location has one (set by the world view). */
+  courier: CharacterView | null = null;
+
+  /** Targets for a stack carried by a character. */
+  private stackTargets(cv: CharacterView, stack: readonly Parcel[]): void {
+    const off = cv.stackOffset();
+    const scale = cv.node.scale.y;
+    let z = (HANDS_Z - cv.bob) * scale;
+    for (let i = 0; i < stack.length; i++) {
+      const p = stack[i]!;
+      this.targets.set(p.id, {
+        x: cv.x + off.dx + cv.sway(i),
+        y: cv.y + 1,
+        z,
+        zi: cv.y + (off.front ? 0.02 : -0.02) + i * 1e-4,
+        rot: cv.swayRot(i),
+        hide: false,
+        van: -1,
+      });
+      z += heightOf(p);
+    }
+  }
+
   /** Screen position of a parcel sprite (for effects). */
   position(id: number): { x: number; y: number } | null {
     const v = this.views.get(id);
@@ -99,24 +122,10 @@ export class ParcelLayer {
     }
     for (const c of wh.carriers) {
       const cv = chars.get(c.id);
-      if (!cv) continue;
-      const off = cv.stackOffset();
-      const scale = cv.node.scale.y;
-      let z = (HANDS_Z - cv.bob) * scale;
-      for (let i = 0; i < c.stack.length; i++) {
-        const p = c.stack[i]!;
-        T.set(p.id, {
-          x: cv.x + off.dx + cv.sway(i),
-          y: cv.y + 1,
-          z,
-          zi: cv.y + (off.front ? 0.02 : -0.02) + i * 1e-4,
-          rot: cv.swayRot(i),
-          hide: false,
-          van: -1,
-        });
-        z += heightOf(p);
-      }
+      if (cv) this.stackTargets(cv, c.stack);
     }
+    // Parcels handed to the courier stay in his arms until he walks out.
+    if (this.courier && wh.courier.parcels.length) this.stackTargets(this.courier, wh.courier.parcels);
     for (const sv of shelves) {
       const items = sv.shelfItems;
       for (let i = 0; i < items.length; i++) {

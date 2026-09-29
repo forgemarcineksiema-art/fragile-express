@@ -49,6 +49,12 @@ export const tr: Dict = {
   'hint.move': 'Daha büyük bir depo seni bekliyor!',
   'hint.helperGone': 'Yardımcın eve gitti',
   'hint.turboEnd': 'Turbo bitti',
+  'goal.done': 'Aşama {n}/{total} tamam!',
+  'hint.courier': 'Bir kurye siparişini bekliyor!',
+  'hint.courierIntro': 'Kurye siparişleri ×4 öder – kartındaki kolileri ona getir!',
+  'hint.coins': 'Rampada paralar birikiyor',
+  'hint.shelfFull': 'Bir raf dolu – kolileri minibüse taşı',
+  'hint.beltFull': 'Bant dolu – kolileri al',
 
   'ui.pause': 'Duraklat',
   'ui.paused': 'Duraklatıldı',

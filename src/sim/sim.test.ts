@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FRAGILE, levelCost, payout, playerCapacity } from './economy.ts';
+import { COURIER_BONUS, COURIER_FIRST_DELAY, COURIER_PAY, COURIER_WALK, FRAGILE, levelCost, payout, playerCapacity } from './economy.ts';
 import { LOCATIONS } from './locations.ts';
 import type { LocationJson } from './layout.ts';
 import { NavGraph } from './nav.ts';
@@ -308,6 +308,89 @@ describe('workers', () => {
     expect(wh.workers.length).toBe(n + 1);
     run(wh, 40);
     expect(wh.workers.length).toBe(n);
+  });
+});
+
+describe('courier orders', () => {
+  /** A warehouse with the first worker hired and a courier standing at the counter. */
+  function withCourier(): Warehouse {
+    const wh = new Warehouse(loc(), null, { noAds: true });
+    wh.levels['hire_sorter'] = 1;
+    wh.applyLevels();
+    place(wh, 300, 300);
+    run(wh, COURIER_FIRST_DELAY + COURIER_WALK + 0.5);
+    return wh;
+  }
+
+  it('no courier before the first worker is hired', () => {
+    const wh = new Warehouse(loc(), null, { noAds: true });
+    place(wh, 300, 300);
+    run(wh, 60);
+    expect(wh.courier.state).toBe('away');
+  });
+
+  it('comes after the first hire and waits at the counter with an order', () => {
+    const wh = withCourier();
+    expect(wh.courier.state).toBe('waiting');
+    const order = wh.courier.order!;
+    expect(order.items.length).toBeGreaterThanOrEqual(2);
+    expect(order.deadline).toBeGreaterThan(wh.time);
+  });
+
+  it('takes matching parcels from the player and pays for each, plus a bonus when complete', () => {
+    const wh = withCourier();
+    const order = wh.courier.order!;
+    wh.player.capacity = 20;
+    // Bring exactly what was asked for, plus one parcel nobody wants.
+    for (const it of order.items) wh.player.stack.push(parcel(wh, it.fragile ? 'fragile' : 'normal', it.district, true));
+    wh.player.stack.push(parcel(wh, 'xxl', 0, true));
+    const before = wh.coins;
+    const spot = wh.layout.courier!.spot;
+    place(wh, spot.x, spot.y - 6);
+    const events: string[] = [];
+    run(wh, 1.2, () => {
+      for (const e of wh.drainEvents()) events.push(e.type);
+    });
+    expect(order.items.every((it) => it.parcel !== null)).toBe(true);
+    expect(wh.player.stack.length).toBe(1);
+    const pay = order.items.reduce((v, it) => v + payout(it.fragile ? 'fragile' : 'normal', 1, false) * COURIER_PAY, 0);
+    expect(wh.coins - before).toBe(pay + Math.round(pay * COURIER_BONUS));
+    expect(events).toContain('courierDone');
+    expect(wh.courier.state).toBe('leaving');
+    // He carries the parcels out, then they are gone.
+    run(wh, COURIER_WALK + 0.1);
+    expect(wh.courier.state).toBe('away');
+    for (const it of order.items) expect(wh.parcels.has(it.parcel!)).toBe(false);
+  });
+
+  it('a normal parcel never fills a fragile line', () => {
+    const wh = withCourier();
+    const order = wh.courier.order!;
+    order.items = [{ district: 0, fragile: true, parcel: null }];
+    wh.player.stack.push(parcel(wh, 'normal', 0, true));
+    const spot = wh.layout.courier!.spot;
+    place(wh, spot.x, spot.y - 6);
+    run(wh, 1);
+    expect(order.items[0]!.parcel).toBeNull();
+    expect(wh.player.stack.length).toBe(1);
+  });
+
+  it('leaves when his time runs out and comes back later with a new order', () => {
+    const wh = withCourier();
+    const first = wh.courier.order!;
+    run(wh, first.wait + 1);
+    expect(wh.courier.state === 'leaving' || wh.courier.state === 'away').toBe(true);
+    run(wh, 70);
+    expect(wh.courier.present).toBe(true);
+    expect(wh.courier.order).not.toBe(first);
+  });
+
+  it('workers never serve him', () => {
+    const wh = new Warehouse(loc(), null, { noAds: true, noPlayer: true });
+    wh.levels = { district1: 1, hire_sorter: 1, hire_loader: 1, hire_collector: 1 };
+    wh.applyLevels();
+    run(wh, 120);
+    expect(wh.courier.state).toBe('away');
   });
 });
 

@@ -35,7 +35,7 @@ wzorcowa pod względem ładowania.
   i `pagehide`; zarobki offline z limitem 2 h.
 - Kruche paczki pojawiają się dopiero po 3 minutach, gdy podstawowa pętla jest opanowana.
 - Pion na telefonach działa, napisy są powiększone, róg z przyciskiem Poki jest wolny.
-- 11 języków (EFIGS, turecki, rosyjski, portugalski, polski, niderlandzki); miniatury 1080×1080 bez tekstu,
+- 10 języków (EFIGS, turecki, rosyjski, portugalski, polski, niderlandzki); miniatury 1080×1080 bez tekstu,
   animowana 5 s w 60 kl./s; stały krok symulacji (działa tak samo przy 144 Hz).
 
 ## Naprawione od razu (niezgodności z Poki i ryzyka techniczne)
@@ -56,6 +56,8 @@ wzorcowa pod względem ładowania.
 ## Rekomendacje dla Fragile Express
 
 ### P1: największy wpływ na czas gry i powroty
+
+Punkty 1–3 są już wdrożone (zob. raport, ósma runda).
 
 1. **Praca, która zostaje graczowi po automatyzacji.** W hitach gracz ma zawsze coś „swojego”: goście VIP
    (My Perfect Hotel), roboty do ładowania co 3 min (Pizza Ready), budzenie pracowników (Monkey Mart). U nas

@@ -3,6 +3,7 @@
 import { Container, Sprite } from 'pixi.js';
 import { t } from '../core/i18n.ts';
 import type { Vec } from '../core/math.ts';
+import { payout } from '../sim/economy.ts';
 import type { Pad } from '../sim/stations.ts';
 import type { Warehouse } from '../sim/warehouse.ts';
 import type { Atlas } from './atlas.ts';
@@ -92,7 +93,13 @@ export class Guide {
       target = s.target(wh);
       hint = t(s.hint);
     } else {
-      target = this.milestoneTarget(wh);
+      const b = this.bottleneck(dt, wh);
+      if (b) {
+        target = b.target;
+        hint = t(b.text);
+      } else {
+        target = this.milestoneTarget(wh);
+      }
     }
     const arrow = world.guideArrow;
     if (!target) {
@@ -121,6 +128,46 @@ export class Guide {
       this.edge.scale.set(0.9 + Math.sin(this.bob * 6) * 0.08);
     }
     return hint;
+  }
+
+  private shown: { key: string; t: number } | null = null;
+  private readonly cooldown = new Map<string, number>();
+
+  /**
+   * After the tutorial: what is holding the depot up right now, most urgent first. Each hint shows
+   * for a few seconds and then rests, so the player is nudged, not nagged.
+   */
+  private bottleneck(dt: number, wh: Warehouse): { key: string; text: string; target: Vec } | null {
+    for (const [k, v] of this.cooldown) this.cooldown.set(k, v - dt);
+    const pl = wh.player;
+    const far = (v: Vec): boolean => Math.hypot(pl.x - v.x, pl.y - v.y) > 110;
+    const has = (role: string): boolean => wh.workers.some((w) => w.role === role);
+    const list: { key: string; text: string; target: Vec }[] = [];
+    const k = wh.layout.courier;
+    if (k && wh.courier.state === 'waiting' && far(k.spot)) list.push({ key: 'courier', text: 'hint.courier', target: k.spot });
+    if (!has('collector')) {
+      const pile = [...wh.piles].sort((a, b) => b.value - a.value)[0];
+      if (pile && pile.value >= payout('normal', wh.loc.multiplier, false) * 12 && far(pile)) list.push({ key: 'coins', text: 'hint.coins', target: pile });
+    }
+    if (!has('loader')) {
+      const full = wh.shelves.find((s) => s.built && s.isFull());
+      if (full && far(full.geom.outStand)) list.push({ key: 'shelf', text: 'hint.shelfFull', target: full.geom.outStand });
+    }
+    if (!has('sorter')) {
+      const b = wh.belts.find((x) => x.items.length >= x.maxItems);
+      if (b && far(b.geom.stand) && pl.stack.length === 0) list.push({ key: 'belt', text: 'hint.beltFull', target: b.geom.stand });
+    }
+    if (this.shown) {
+      this.shown.t += dt;
+      const still = list.find((c) => c.key === this.shown!.key);
+      if (still && this.shown.t < 7) return still;
+      this.cooldown.set(this.shown.key, 25);
+      this.shown = null;
+    }
+    const next = list.find((c) => (this.cooldown.get(c.key) ?? 0) <= 0);
+    if (!next) return null;
+    this.shown = { key: next.key, t: 0 };
+    return next;
   }
 
   /** After the tutorial: point at a milestone pad the player can afford but may not have noticed. */

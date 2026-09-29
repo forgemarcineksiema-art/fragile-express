@@ -171,3 +171,20 @@ export const ASSIST_LIFETIME = 12;
 export const OFFLINE_FACTOR = 0.5;
 export const OFFLINE_MAX_SECONDS = 2 * 60 * 60;
 export const OFFLINE_MIN_SECONDS = 60;
+
+// Courier orders: player-only jobs that pay well above a van run and keep the player busy once
+// workers run the depot.
+/** First order this long after the first worker is hired. */
+export const COURIER_FIRST_DELAY = 18;
+/** Pause between orders. */
+export const COURIER_GAP_MIN = 28;
+export const COURIER_GAP_MAX = 55;
+/** How long the courier waits at the counter. */
+export const COURIER_WAIT_BASE = 32;
+export const COURIER_WAIT_PER_ITEM = 11;
+/** Walking in from the door or back out. */
+export const COURIER_WALK = 2.2;
+/** Each parcel handed over pays this many times its van payout. */
+export const COURIER_PAY = 4;
+/** Completing the whole order adds this share of its value. */
+export const COURIER_BONUS = 0.5;

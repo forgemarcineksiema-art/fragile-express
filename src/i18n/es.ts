@@ -49,6 +49,12 @@ export const es: Dict = {
   'hint.move': '¡Te espera un almacén más grande!',
   'hint.helperGone': 'Tu ayudante se fue a casa',
   'hint.turboEnd': 'Se acabó el turbo',
+  'goal.done': '¡Etapa {n}/{total} completada!',
+  'hint.courier': '¡Un mensajero espera su pedido!',
+  'hint.courierIntro': 'Los pedidos de mensajería pagan ×4: ¡llévale los paquetes de su tarjeta!',
+  'hint.coins': 'Hay monedas junto al muelle',
+  'hint.shelfFull': 'Una estantería está llena: lleva los paquetes a la furgoneta',
+  'hint.beltFull': 'La cinta está llena: recoge los paquetes',
 
   'ui.pause': 'Pausa',
   'ui.paused': 'Pausa',

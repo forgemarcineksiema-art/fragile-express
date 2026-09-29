@@ -229,3 +229,20 @@ Przegląd całej gry w 16:9 i poprawki tego, co najbardziej odstawało:
 - **Parkingi na zachodzie:** auta wjeżdżają z drogi dojazdowej prosto na miejsce, potem wycofują się,
   zawracają i odjeżdżają (albo wyjeżdżają przodem, jeśli wcześniej wjechały tyłem).
 - Koszt: ok. 2,6–3,1 ms na klatkę w Hubie, paczka 798 KB.
+
+## Ósma runda: praca dla gracza po automatyzacji, postęp lokacji, podpowiedzi
+
+- **Zlecenia kurierskie** (wzór: zamówienia kurierskie w Burger Please). Po zatrudnieniu pierwszego
+  pracownika co ok. 30–55 s przez drzwi w przedniej ścianie wchodzi kurier i staje na macie. Nad nim karta:
+  2–4 paczki z dzielni (część kruchych), pasek czasu i nagroda. Gracz przynosi pasujące paczki (z taśmy albo
+  regału), każda płaci 4× stawkę vana, a komplet dodaje 50% premii. Po czasie kurier odchodzi bez kary.
+  Pracownicy go nie obsługują, więc gracz ma aktywną, opłacalną robotę, gdy magazyn działa sam; kruche
+  paczki w zamówieniu są najcenniejsze. Automatyzacja, zarobki offline i tempo z symulatora bez zmian (bot
+  kuriera ignoruje, kurier ma osobne losowanie). 6 nowych testów symulacji.
+- **Karta celu** pod licznikiem monet: nazwa lokacji, etapy „2/9” z paskiem i następny kamień milowy z ceną
+  (podświetlony, gdy gracza na niego stać). Po każdym etapie karta pulsuje i pojawia się „Etap n/m
+  zaliczony!”. Karta pojawia się dopiero po samouczku.
+- **Podpowiedzi o wąskich gardłach** ze strzałką do miejsca: kurier czeka, monety leżą przy rampie (bez
+  zbieracza), regał pełny (bez ładowacza), taśma pełna (bez sortowacza). Każda pokazuje się do 7 s i
+  potem odpoczywa 25 s.
+- Na wąskich ekranach podpowiedzi i komunikaty są pod kartą celu, a nie na liczniku monet.

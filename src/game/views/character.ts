@@ -90,10 +90,11 @@ export class CharacterView {
     private readonly atlas: Atlas,
     readonly carrier: Carrier,
     helper: boolean,
+    outfit?: Outfit,
   ) {
     const role = carrier.role;
     const seed = Math.abs(carrier.id * 7919);
-    this.outfit = helper ? 'helper' : (role as Outfit);
+    this.outfit = outfit ?? (helper ? 'helper' : (role as Outfit));
     const style = OUTFITS[this.outfit];
     const player = role === 'player';
     const skin = player ? SKINS[0]! : SKINS[seed % SKINS.length]!;

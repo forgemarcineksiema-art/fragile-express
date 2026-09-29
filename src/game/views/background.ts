@@ -373,6 +373,17 @@ export class Background {
     // Front wall (low)
     g.rect(0, L.h - WALL, L.w, WALL).fill(th.wallTop);
     g.rect(0, L.h - 8, L.w, 8).fill(th.wallFace);
+    // Courier door in the front wall: glass door in a steel frame, a mat just inside
+    if (L.courier) {
+      const dx = L.courier.door.x;
+      g.rect(dx - 28, L.h - WALL - 3, 56, WALL + 5).fill(0x374151);
+      g.rect(dx - 25, L.h - WALL, 24, WALL).fill({ color: 0x93c5fd, alpha: 0.75 });
+      g.rect(dx + 1, L.h - WALL, 24, WALL).fill({ color: 0x93c5fd, alpha: 0.75 });
+      g.rect(dx - 22, L.h - WALL + 3, 3, WALL - 6).fill({ color: WHITE, alpha: 0.5 });
+      g.rect(dx + 4, L.h - WALL + 3, 3, WALL - 6).fill({ color: WHITE, alpha: 0.5 });
+      g.rect(dx - 24, L.h - WALL - 16, 48, 12).fill(0x57534e);
+      for (let x = dx - 22; x < dx + 22; x += 4) g.rect(x, L.h - WALL - 14, 2, 8).fill({ color: 0x000000, alpha: 0.18 });
+    }
     // Column heads along the side and front walls, clear of the doors
     const cap = (x: number, y: number): void => {
       g.rect(x - 8, y - 8, 16, 16).fill(shade(th.wallTop, 0.82));

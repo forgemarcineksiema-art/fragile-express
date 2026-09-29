@@ -34,6 +34,12 @@ export class UI {
   private readonly hint: HTMLDivElement;
   private readonly toastEl: HTMLDivElement;
   private readonly turbo: HTMLDivElement;
+  private readonly goal: HTMLDivElement;
+  private readonly goalName: HTMLSpanElement;
+  private readonly goalCount: HTMLSpanElement;
+  private readonly goalFill: HTMLElement;
+  private readonly goalNext: HTMLDivElement;
+  private goalKey = '';
   readonly pauseBtn: HTMLButtonElement;
   private readonly screen: HTMLDivElement;
   private readonly adOverlay: HTMLDivElement;
@@ -52,6 +58,20 @@ export class UI {
     this.coins.appendChild(this.coinValue);
     this.coins.addEventListener('animationend', () => this.coins.classList.remove('bump'));
     this.root.appendChild(this.coins);
+
+    // Location progress and the next milestone
+    this.goal = el('div', 'hud-goal');
+    const head = el('div', 'g-head');
+    this.goalName = el('span', 'g-name');
+    this.goalCount = el('span', 'g-count');
+    head.append(this.goalName, this.goalCount);
+    const bar = el('div', 'g-bar');
+    this.goalFill = el('i');
+    bar.appendChild(this.goalFill);
+    this.goalNext = el('div', 'g-next');
+    this.goal.append(head, bar, this.goalNext);
+    this.goal.addEventListener('animationend', () => this.goal.classList.remove('pop'));
+    this.root.appendChild(this.goal);
 
     const badges = el('div', 'hud-badges');
     this.turbo = el('div', 'badge');
@@ -142,6 +162,40 @@ export class UI {
     this.toastTimer = setTimeout(() => this.toastEl.classList.remove('on'), ms);
   }
 
+  /** Location progress (milestones bought of all) and the next milestone with what it still costs. */
+  setGoal(info: { name: string; done: number; total: number; next: { label: string; price: number; affordable: boolean } | null } | null): void {
+    if (!info) {
+      this.goal.style.display = 'none';
+      this.goalKey = '';
+      return;
+    }
+    const n = info.next;
+    const key = `${info.name}|${info.done}|${info.total}|${n ? `${n.label}|${formatCoins(n.price)}|${n.affordable}` : ''}`;
+    if (key === this.goalKey) return;
+    this.goalKey = key;
+    this.goal.style.display = '';
+    this.goalName.textContent = info.name;
+    this.goalCount.textContent = `${info.done}/${info.total}`;
+    this.goalFill.style.width = `${Math.round((info.done / Math.max(1, info.total)) * 100)}%`;
+    this.goalNext.style.display = n ? '' : 'none';
+    this.goalNext.classList.toggle('ok', !!n?.affordable);
+    if (n) {
+      this.goalNext.innerHTML = '';
+      const label = el('span', 'g-label');
+      label.textContent = `▸ ${n.label}`;
+      const price = el('span', 'g-price', COIN_SVG);
+      price.append(document.createTextNode(formatCoins(n.price)));
+      this.goalNext.append(label, price);
+    }
+  }
+
+  /** A milestone was just bought: the card pops. */
+  popGoal(): void {
+    this.goal.classList.remove('pop');
+    void this.goal.offsetWidth;
+    this.goal.classList.add('pop');
+  }
+
   setTurbo(secondsLeft: number | null): void {
     if (secondsLeft === null || secondsLeft <= 0) {
       this.turbo.classList.remove('on');
@@ -154,6 +208,7 @@ export class UI {
 
   setHudVisible(on: boolean): void {
     this.coins.style.visibility = on ? '' : 'hidden';
+    this.goal.style.visibility = on ? '' : 'hidden';
     this.pauseBtn.style.visibility = on ? '' : 'hidden';
   }
 

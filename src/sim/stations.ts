@@ -2,7 +2,7 @@
 import { rect, type Rect } from '../core/math.ts';
 import { VAN_ARRIVE_TIME, VAN_AWAY_TIME, VAN_LEAVE_TIME } from './economy.ts';
 import { AD_PAD_SIZE, PAD_SIZE, type BeltGeom, type DockGeom, type PadJson, type ShelfGeom } from './layout.ts';
-import type { AdKind, AdSize, Parcel } from './types.ts';
+import type { AdKind, AdSize, Parcel, CourierOrder } from './types.ts';
 
 /** Gap between parcel centres on the belt. */
 export const BELT_SPACING = 30;
@@ -267,5 +267,21 @@ export class AdPad {
     this.expiresAt = expiresAt;
     this.target = target;
     this.zone = rect(x - AD_PAD_SIZE / 2, y - AD_PAD_SIZE / 2, AD_PAD_SIZE, AD_PAD_SIZE);
+  }
+}
+
+/** The courier who comes in through the front door to pick up an order from the player. */
+export class Courier {
+  state: 'away' | 'arriving' | 'waiting' | 'leaving' = 'away';
+  /** Seconds left of the walk in or out. */
+  t = 0;
+  order: CourierOrder | null = null;
+  /** Sim time of the next order (0 = not scheduled yet). */
+  nextAt = 0;
+  /** Parcels he has been given (carried out when he leaves). */
+  parcels: Parcel[] = [];
+
+  get present(): boolean {
+    return this.state !== 'away';
   }
 }

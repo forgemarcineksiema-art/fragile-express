@@ -49,6 +49,12 @@ export const nl: Dict = {
   'hint.move': 'Er wacht een groter depot!',
   'hint.helperGone': 'Je helper is naar huis gegaan',
   'hint.turboEnd': 'Turbo is voorbij',
+  'goal.done': 'Etappe {n}/{total} gehaald!',
+  'hint.courier': 'Een koerier wacht op zijn bestelling!',
+  'hint.courierIntro': 'Koeriersopdrachten betalen ×4 – breng hem de pakketten van zijn kaart!',
+  'hint.coins': 'Er liggen munten bij het laadperron',
+  'hint.shelfFull': 'Een rek is vol – breng de pakketten naar het busje',
+  'hint.beltFull': 'De band is vol – pak de pakketten',
 
   'ui.pause': 'Pauze',
   'ui.paused': 'Gepauzeerd',

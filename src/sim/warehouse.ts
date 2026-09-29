@@ -10,6 +10,14 @@ import {
   ASSIST_LIFETIME,
   ASSIST_MAX_MISSING,
   CAREFUL_SPEED_FACTOR,
+  COURIER_BONUS,
+  COURIER_FIRST_DELAY,
+  COURIER_GAP_MAX,
+  COURIER_GAP_MIN,
+  COURIER_PAY,
+  COURIER_WAIT_BASE,
+  COURIER_WAIT_PER_ITEM,
+  COURIER_WALK,
   FRAGILE,
   PALLET_LOAD_INTERVAL,
   PLAYER_ACCEL,
@@ -39,8 +47,8 @@ import {
 import { AD_PAD_SIZE, PAD_SIZE, buildLayout, padPosition, type Layout, type LocationJson, type PadJson } from './layout.ts';
 import { NavGraph } from './nav.ts';
 import type { LocationSave } from './save.ts';
-import { AdPad, Belt, CoinPile, Dock, Pad, Shelf } from './stations.ts';
-import type { AdKind, Parcel, ParcelKind, SimEvent, WorkerRole } from './types.ts';
+import { AdPad, Belt, CoinPile, Courier, Dock, Pad, Shelf } from './stations.ts';
+import type { AdKind, CourierItem, Parcel, ParcelKind, SimEvent, WorkerRole } from './types.ts';
 import { Worker } from './worker.ts';
 
 export interface WarehouseOptions {
@@ -82,6 +90,10 @@ export class Warehouse {
   readonly piles: CoinPile[];
   readonly pads: Pad[];
   adPads: AdPad[] = [];
+  /** Courier orders (player-only, never saved: a returning player simply gets a new one). */
+  readonly courier = new Courier();
+  /** Separate random stream so orders do not change the rest of the simulation. */
+  private readonly courierRng: Rng;
   readonly player: Carrier;
   workers: Worker[] = [];
   readonly parcels = new Map<number, Parcel>();
@@ -109,6 +121,7 @@ export class Warehouse {
     this.opts = opts;
     this.layout = buildLayout(loc);
     this.rng = new Rng(save?.seed ?? opts.seed ?? 12345);
+    this.courierRng = new Rng(((save?.seed ?? opts.seed ?? 12345) ^ 0x5eed) >>> 0);
     const L = this.layout;
 
     this.belts = loc.belts.map((b, i) => new Belt(i, L.belts[i]!, b.interval, b.speed, b.maxItems));
@@ -363,6 +376,7 @@ export class Warehouse {
       this.playerInteractions();
       this.updatePads(dt);
       this.updateAdPads(dt);
+      this.updateCourier(dt);
     }
     this.updateDocks(dt);
     this.updateHelpers();
@@ -653,6 +667,119 @@ export class Warehouse {
     }
     for (const d of this.docks) if (d.built && inRect(d.geom.zone, x, y)) this.dropInVan(c, d);
     for (const p of this.piles) if (p.value > 0 && dist2(x, y, p.x, p.y) <= (p.r + c.radius) ** 2) this.collectPile(c, p);
+    const k = this.layout.courier;
+    if (k && this.courier.state === 'waiting' && inRect(k.zone, x, y)) this.handToCourier(c);
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // Courier orders
+  // -------------------------------------------------------------------------------------------
+
+  private updateCourier(dt: number): void {
+    const k = this.courier;
+    if (!this.layout.courier) return;
+    switch (k.state) {
+      case 'away':
+        // Orders start once the first worker is hired: the moment the player's hands get free.
+        if (this.bought('hire') < 1 || this.builtDistricts().length === 0) return;
+        if (k.nextAt === 0) k.nextAt = this.time + COURIER_FIRST_DELAY;
+        if (this.time >= k.nextAt) this.courierArrive();
+        return;
+      case 'arriving':
+        k.t -= dt;
+        if (k.t <= 0) {
+          k.state = 'waiting';
+          k.order!.deadline = this.time + k.order!.wait;
+        }
+        return;
+      case 'waiting':
+        if (this.time >= k.order!.deadline) this.courierLeave(false);
+        return;
+      case 'leaving':
+        k.t -= dt;
+        if (k.t <= 0) {
+          for (const p of k.parcels) this.parcels.delete(p.id);
+          k.parcels = [];
+          k.order = null;
+          k.state = 'away';
+        }
+        return;
+    }
+  }
+
+  private courierArrive(): void {
+    const k = this.courier;
+    const r = this.courierRng;
+    const built = this.builtDistricts();
+    const n = Math.min(4, 2 + (this.stage() >= 4 ? 1 : 0) + (this.stage() >= 8 ? 1 : 0));
+    const items: CourierItem[] = [];
+    let fragile = 0;
+    for (let i = 0; i < n; i++) {
+      const f = this.fragileActive && fragile < 2 && r.chance(0.4);
+      if (f) fragile++;
+      items.push({ district: built[r.int(built.length)]!, fragile: f, parcel: null });
+    }
+    // Group lines by district and put fragile ones last, so the order reads cleanly.
+    items.sort((a, b) => a.district - b.district || Number(a.fragile) - Number(b.fragile));
+    const mult = this.loc.multiplier;
+    const value = items.reduce((v, it) => v + payout(it.fragile ? 'fragile' : 'normal', mult, false) * COURIER_PAY, 0);
+    k.order = { items, deadline: 0, wait: COURIER_WAIT_BASE + COURIER_WAIT_PER_ITEM * n, value: Math.round(value * (1 + COURIER_BONUS)) };
+    k.state = 'arriving';
+    k.t = COURIER_WALK;
+    k.parcels = [];
+    this.events.push({ type: 'courierArrive' });
+  }
+
+  private courierLeave(complete: boolean): void {
+    const k = this.courier;
+    k.state = 'leaving';
+    k.t = COURIER_WALK;
+    k.nextAt = this.time + COURIER_GAP_MIN + this.courierRng.next() * (COURIER_GAP_MAX - COURIER_GAP_MIN);
+    this.events.push({ type: 'courierLeave', complete });
+  }
+
+  /** Line of the order a parcel can fill: fragile parcels prefer fragile lines. */
+  private courierLine(p: Parcel): CourierItem | null {
+    const items = this.courier.order?.items ?? [];
+    if (p.kind === 'xxl') return null;
+    const open = items.filter((it) => it.parcel === null && it.district === p.district);
+    if (p.kind === 'fragile') return open.find((it) => it.fragile) ?? open.find((it) => !it.fragile) ?? null;
+    return open.find((it) => !it.fragile) ?? null;
+  }
+
+  /** Whether anything in this carrier's stack is wanted by the courier. */
+  courierWants(c: Carrier): boolean {
+    if (this.courier.state !== 'waiting') return false;
+    return c.stack.some((p) => this.courierLine(p) !== null);
+  }
+
+  handToCourier(c: Carrier): boolean {
+    const k = this.courier;
+    if (k.state !== 'waiting' || !this.ready(c)) return false;
+    for (let i = c.stack.length - 1; i >= 0; i--) {
+      const p = c.stack[i]!;
+      const line = this.courierLine(p);
+      if (!line) continue;
+      c.stack.splice(i, 1);
+      p.hop++;
+      line.parcel = p.id;
+      k.parcels.push(p);
+      const amount = Math.round(payout(p.kind, this.loc.multiplier, false) * COURIER_PAY * (this.turboActive() ? TURBO_MULT : 1));
+      this.coins += amount;
+      this.stats.earned += amount;
+      this.stats.delivered++;
+      this.spend(c);
+      this.events.push({ type: 'courierHand', parcel: p.id, amount });
+      if (k.order!.items.every((it) => it.parcel !== null)) {
+        const bonus = Math.round((k.order!.value / (1 + COURIER_BONUS)) * COURIER_BONUS);
+        this.coins += bonus;
+        this.stats.earned += bonus;
+        this.events.push({ type: 'courierDone', bonus });
+        this.courierLeave(true);
+      }
+      return true;
+    }
+    return false;
   }
 
   // -------------------------------------------------------------------------------------------

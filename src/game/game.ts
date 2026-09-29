@@ -356,6 +356,7 @@ export class Game {
     this.camera.apply(this.world.root, dt);
     const hint = this.guide.update(dt, wh, this.world, this.camera);
     this.ui.setHint(this.state === 'play' ? hint : null);
+    this.updateGoal();
     if (this.state === 'play') this.footsteps();
     Sound.setNight(this.world.daylight.lamps);
     Sound.duck(this.state !== 'play');
@@ -392,6 +393,41 @@ export class Game {
   }
 
   private lastStep = 0;
+
+  /** Location progress: milestones (districts, hires, second vans, the move) bought of all. */
+  private updateGoal(): void {
+    const wh = this.wh;
+    if (this.state !== 'play' || !this.guide || this.guide.active) {
+      this.ui.setGoal(null);
+      return;
+    }
+    const miles = wh.pads.filter((p) => p.def.type !== 'upgrade');
+    const done = miles.filter((p) => wh.padBought(p.id)).length;
+    let next: (typeof miles)[number] | null = null;
+    for (const p of miles) {
+      if (!p.visible || wh.padBought(p.id)) continue;
+      if (!next || wh.padCost(p) - p.paid < wh.padCost(next) - next.paid) next = p;
+    }
+    const labelOf = (p: (typeof miles)[number]): string => {
+      switch (p.def.type) {
+        case 'district':
+          return t('pad.district');
+        case 'hire':
+          return t(`hire.${p.def.role}`);
+        case 'van2':
+          return t('pad.van2');
+        default:
+          return t('pad.move');
+      }
+    };
+    const left = next ? Math.ceil(wh.padCost(next) - next.paid) : 0;
+    this.ui.setGoal({
+      name: t(wh.loc.name),
+      done,
+      total: miles.length,
+      next: next ? { label: labelOf(next), price: left, affordable: wh.coins >= left } : null,
+    });
+  }
 
   /** Footsteps of the player, one per foot fall. */
   private footsteps(): void {
@@ -493,6 +529,12 @@ export class Game {
           const pad = wh.pads.find((p) => p.id === e.pad)!;
           const big = pad.def.type !== 'upgrade';
           this.sfx(big ? 'unlock' : 'buy');
+          if (big && pad.def.type !== 'move') {
+            const miles = wh.pads.filter((p) => p.def.type !== 'upgrade');
+            const done = miles.filter((p) => wh.padBought(p.id)).length;
+            this.ui.popGoal();
+            this.ui.toast(t('goal.done', { n: done, total: miles.length }));
+          }
           world.fx.confetti(e.x, e.y);
           world.emote(wh.player.id, 'happy', 1.2);
           if (e.reveal) {
@@ -510,6 +552,40 @@ export class Game {
           else if (pad.def.type === 'hire') this.ui.toast(t('hint.worker'));
           break;
         }
+        case 'courierArrive':
+          Sound.play('hire');
+          if (!this.data.flags.courier) {
+            this.data.flags.courier = true;
+            this.ui.toast(t('hint.courierIntro'), '', 5000);
+          }
+          break;
+        case 'courierHand': {
+          const cv = world.courier;
+          if (!cv) break;
+          const at = { x: cv.figure.x, y: cv.figure.y - 60 };
+          this.sfxAt('drop', at.x, at.y + 60, 2);
+          world.fx.payout(at.x, at.y - 30, `+${formatCoins(e.amount)}`);
+          const from = this.camera.worldToScreen(at.x, at.y);
+          const to = this.ui.coinTarget();
+          this.coinTrail.fly(from.x, from.y, to.x, to.y, 5, (i) => {
+            this.ui.bumpCoin();
+            this.sfx('clink', Math.min(12, i + 4));
+          });
+          break;
+        }
+        case 'courierDone': {
+          const cv = world.courier;
+          if (!cv) break;
+          this.sfx('cash');
+          world.fx.confetti(cv.figure.x, cv.figure.y - 40);
+          world.fx.payout(cv.figure.x, cv.figure.y - 120, `+${formatCoins(e.bonus)} ★`, 0xfde047);
+          cv.say('👍');
+          world.emote(wh.player.id, 'happy', 1.2);
+          break;
+        }
+        case 'courierLeave':
+          if (!e.complete) world.courier?.say('…');
+          break;
         case 'hired': {
           this.sfx('hire');
           world.say(e.carrier, '👋');

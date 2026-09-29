@@ -15,6 +15,7 @@ import { DockView, type VanEvent } from './views/dock.ts';
 import { PileView } from './views/pile.ts';
 import { BeltView, DeskView, ShelfView, beltTexture } from './views/stations.ts';
 import { TruckView } from './views/truck.ts';
+import { CourierView } from './views/courier.ts';
 import { propNodes } from './views/props.ts';
 import { payout } from '../sim/economy.ts';
 import type { Warehouse } from '../sim/warehouse.ts';
@@ -36,6 +37,8 @@ export class WorldView {
   readonly piles: PileView[];
   private readonly trucks: TruckView[] = [];
   readonly desk: DeskView;
+  /** The courier at the front door (locations that have one). */
+  readonly courier: CourierView | null = null;
   private readonly pads: PadView[];
   private readonly adPads = new Map<string, AdPadView>();
   private readonly tooltip: PadTooltip;
@@ -95,7 +98,15 @@ export class WorldView {
       return v;
     });
 
+    if (wh.layout.courier) {
+      const cv = new CourierView(wh, atlas);
+      this.courier = cv;
+      this.floor.addChild(cv.mat);
+      this.entities.addChild(cv.figure.node, cv.figure.front);
+    }
+
     this.parcels = new ParcelLayer(atlas, this.entities, wh);
+    this.parcels.courier = this.courier?.figure ?? null;
     this.parcels.onVanLand = (d) => this.docks[d]?.kick();
     this.parcels.spawnOrigin = (belt) => this.trucks[belt]?.handsPoint() ?? null;
     this.fx = new Fx(atlas);
@@ -105,6 +116,7 @@ export class WorldView {
       ...this.trucks.flatMap((t) => [t.node, t.worker.node, t.worker.front, t.held]),
     ]);
     this.overlay.addChild(this.daylight.blooms, this.fx.layer, this.parcels.timers, this.wobble);
+    if (this.courier) this.overlay.addChild(this.courier.card);
     this.wobbleIcon = new Sprite(atlas.get('icon_glass'));
     this.wobbleIcon.scale.set(0.34);
     this.overlay.addChild(this.wobbleIcon);
@@ -221,6 +233,7 @@ export class WorldView {
     for (const a of this.adPads.values()) a.node.visible = false;
     this.tooltip.node.visible = false;
     this.guideArrow.visible = false;
+    if (this.courier) this.courier.card.visible = false;
     this.wobble.visible = false;
     this.wobbleIcon.visible = false;
     this.parcels.timers.visible = false;
@@ -251,6 +264,7 @@ export class WorldView {
       );
     }
     for (const p of this.piles) p.update(dt);
+    this.courier?.update(dt, time);
     this.desk.update(dt);
     for (const p of this.pads) p.update(dt, time);
     this.syncAdPads(dt, time);
