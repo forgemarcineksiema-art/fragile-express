@@ -168,17 +168,17 @@ const SCENES: Scene[] = [
     },
     focus: (s) => ({ x: s.wh.docks[0]!.geom.bay.x - 70, y: s.wh.docks[0]!.geom.y - 10 }),
   },
-  // 3. The whole depot running on its own.
+  // 3. The depot running on its own: the truck being unloaded, the belt, workers and shelves.
   {
     frames: 90,
-    span: 820,
+    span: 600,
     setup: (s) => {
       s.stack([]);
       s.place(470, 250);
       s.intent = { x: 0, y: 0, careful: false };
     },
     tick: () => {},
-    focus: () => ({ x: 760, y: 480 }),
+    focus: () => ({ x: 130, y: 250 }),
   },
 ];
 

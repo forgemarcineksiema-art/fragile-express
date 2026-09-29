@@ -137,3 +137,16 @@ postawiłem za pierwszym pracownikiem, bo gracz zna już pętlę i ma monety na 
 - **Ceny przestrojone** do szybszej pętli (symulator, mediana z 5 przebiegów): Poczta — pierwsza dzielnica
   1:15, pierwszy pracownik 3:03, automatyzacja 9:12, przejście 20:34; Sortownia — przejście 18:33.
 
+## Trzecia runda
+
+- **Rozładunek ciężarówki:** ciężarówka ma podniesione boczne drzwi z ładunkiem w środku; pracownik sięga
+  do środka, odwraca się z paczką (od razu właściwego koloru i rodzaju, bo symulacja losuje następną paczkę
+  z wyprzedzeniem) i podaje ją na taśmę. Silnik na biegu jałowym lekko drży i dymi.
+- **Rekwizyty** z plików lokacji: wózki widłowe, palety w folii i stosy palet, wysokie regały z kartonami,
+  automat z przekąskami, dystrybutor wody, ławka, szafki, kosze, pachołki, rośliny, wózek ręczny, waga do
+  paczek i zakreskowane pola na podłodze. Stałe rekwizyty są przeszkodami dla gracza i pracowników.
+- **Monety i wypłaty:** błyszczące monety, w locie wirują; przy dużych kwotach paczki banknotów; odbłyski na
+  stosach. Wypłata z vana spada deszczem monet i stos rośnie, gdy lądują; zebrane monety lecą do licznika,
+  który płynnie odlicza; zbieracz wysuwa szufladę kasy; większe napisy wypłat z monetą (i „×2” przy turbo);
+  dźwięki brzęku i kasy.
+

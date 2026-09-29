@@ -55,6 +55,10 @@ defined in `src/sim/layout.ts`, so every location reads the same.
   needed for level `i + 1`, then one more level every `every` stages.
 - Costs: `C0 × 1.35^k × costScale`. Districts, hires and second vans share a counter per type, so the
   third hire costs `C0 × 1.35²` whichever role it is.
+- `props` places decorations (`forklift`, `pallet_wrap`, `pallet_stack`, `rack_tall`, `vending`,
+  `water_cooler`, `bench`, `lockers`, `bins`, `cones`, `plant`, `trolley`, `scale`) by footprint centre;
+  they are solid unless `"solid": false`, so keep them off walking paths. `paint` adds hazard-hatched
+  floor areas `[x, y, w, h]`.
 - `tools/fmt-location.py locations/x.json` rewrites a file with one pad per line.
 
 ## Development helpers
