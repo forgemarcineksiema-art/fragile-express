@@ -103,11 +103,16 @@ export function installDevTools(game: Game): void {
     const { makeThumbnails } = await import('./promo.ts');
     return makeThumbnails(game as unknown as import('./promo.ts').PromoHost);
   };
+  /** Freezes the time of day (0..1: 0.3 noon, 0.62 sunset, 0.8 night); null follows play time. */
+  const daytime = (p: number | null): void => {
+    (game as unknown as { world: { daylight: { fixed: number | null } } }).world.daylight.fixed = p;
+    sim(1 / 60, null);
+  };
   const reset = (): void => {
     g.writeSave = () => {};
     localStorage.removeItem(SAVE_KEY);
     location.reload();
   };
-  (window as unknown as { __dev: unknown; __game: Game }).__dev = { sim, go, wait, reset, snapshot, autoplay, location: gotoLocation, overview, thumbnails };
+  (window as unknown as { __dev: unknown; __game: Game }).__dev = { sim, go, wait, reset, snapshot, autoplay, location: gotoLocation, overview, thumbnails, daytime };
   (window as unknown as { __game: Game }).__game = game;
 }

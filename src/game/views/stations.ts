@@ -72,20 +72,31 @@ export class ShelfView {
     const g = new Graphics();
     // Shadow
     g.rect(body.x + 4, body.y + 6, body.w, body.h).fill({ color: 0x000000, alpha: 0.15 });
-    // Top: metal frame with two wooden lanes
-    g.rect(body.x, body.y - RACK_H, body.w, body.h).fill(0x64748b);
-    g.rect(body.x + 4, body.y - RACK_H + 4, body.w / 2 - 6, body.h - 8).fill(0xc9955f);
-    g.rect(body.x + body.w / 2 + 2, body.y - RACK_H + 4, body.w / 2 - 6, body.h - 8).fill(0xc9955f);
-    for (let y = body.y - RACK_H + 20; y < body.y + body.h - RACK_H - 4; y += 18.5) {
-      g.rect(body.x + 2, y, body.w - 4, 2).fill({ color: 0x8b5a2b, alpha: 0.5 });
+    // Steel sorting rack: galvanised deck with slats, beams and uprights in the district colour
+    const deck = 0xc3cad2;
+    const steelDark = 0x6b7684;
+    const top = body.y - RACK_H;
+    g.rect(body.x, top, body.w, body.h).fill(deck);
+    for (let y = top + 5; y < top + body.h - 3; y += 4.6) g.rect(body.x + 4, y, body.w - 8, 1).fill({ color: steelDark, alpha: 0.28 });
+    g.rect(cx - 2, top, 4, body.h).fill(steelDark);
+    g.rect(cx - 2, top, 1.2, body.h).fill({ color: WHITE, alpha: 0.35 });
+    // Lane dividers between the rows of slots
+    for (let y = top + 20; y < top + body.h - 6; y += 18.5) g.rect(body.x + 4, y, body.w - 8, 1.6).fill({ color: steelDark, alpha: 0.45 });
+    // Side beams and uprights
+    const beam = shade(color, 0.9);
+    g.rect(body.x, top, 4, body.h).fill(beam);
+    g.rect(body.x + body.w - 4, top, 4, body.h).fill(beam);
+    for (const uy of [top, top + body.h / 2 - 3, top + body.h - 6]) {
+      g.rect(body.x - 2, uy, 7, 7).fill(shade(color, 0.62));
+      g.rect(body.x + body.w - 5, uy, 7, 7).fill(shade(color, 0.62));
     }
-    // Front face
-    g.rect(body.x, body.y + body.h - RACK_H, body.w, RACK_H).fill(0x475569);
-    g.rect(body.x, body.y + body.h - RACK_H, body.w, 3).fill({ color: WHITE, alpha: 0.2 });
-    // Colour strip down the side
-    g.rect(body.x - 3, body.y - RACK_H, 3, body.h).fill(color);
-    g.rect(body.x + body.w, body.y - RACK_H, 3, body.h).fill(color);
-    g.rect(body.x - 3, body.y - RACK_H, body.w + 6, body.h).stroke({ width: 1.5, color: INK, alpha: 0.3 });
+    // Front beam with a label holder
+    g.rect(body.x, body.y + body.h - RACK_H, body.w, RACK_H).fill(color);
+    g.rect(body.x, body.y + body.h - RACK_H, body.w, 2.5).fill({ color: WHITE, alpha: 0.3 });
+    g.rect(body.x, body.y + body.h - 3, body.w, 3).fill({ color: 0x000000, alpha: 0.2 });
+    g.roundRect(cx - 11, body.y + body.h - RACK_H + 2.5, 22, 7, 1.5).fill(WHITE);
+    drawSymbol(g, cx, body.y + body.h - RACK_H + 6, 5, DISTRICT_SYMBOLS[shelf.district]!, color);
+    g.rect(body.x - 2, top, body.w + 4, body.h).stroke({ width: 1.5, color: INK, alpha: 0.3 });
     // Sign on a post at the north end
     const sy = body.y - RACK_H - 48;
     g.rect(cx - 2, sy + 20, 4, 30).fill(0x475569);
@@ -109,7 +120,7 @@ export class ShelfView {
     const row = Math.floor(k / RACK_COLS);
     const col = k % RACK_COLS;
     return {
-      x: cx + (col === 0 ? -14 : 14),
+      x: cx + (col === 0 ? -15 : 15),
       y: body.y + 6 + row * 18.5 - (layer > 0 ? 3 : 0),
       z: RACK_H + layer * (PARCEL.h + 1),
     };
@@ -160,10 +171,21 @@ export class DeskView {
     const b = wh.layout.safe.body;
     const h = 26;
     g.rect(b.x + 4, b.y + 6, b.w, b.h).fill({ color: 0x000000, alpha: 0.15 });
-    g.roundRect(b.x, b.y - h, b.w, b.h, 6).fill(0xb45309);
-    g.rect(b.x, b.y + b.h - h, b.w, h).fill(0x92400e);
-    g.rect(b.x, b.y + b.h - h, b.w, 3).fill({ color: WHITE, alpha: 0.2 });
-    g.roundRect(b.x, b.y - h, b.w, b.h + h, 6).stroke({ width: 1.5, color: INK, alpha: 0.3 });
+    // Laminate top with a darker edge, front panel with the brand stripe and a kick plate
+    g.roundRect(b.x, b.y - h, b.w, b.h, 5).fill(0xe7e2d8);
+    g.rect(b.x + 3, b.y - h + 3, b.w - 6, 1.2).fill({ color: WHITE, alpha: 0.6 });
+    g.rect(b.x, b.y + b.h - h - 3, b.w, 3).fill(0xc9c1b2);
+    g.rect(b.x, b.y + b.h - h, b.w, h).fill(0x3f4654);
+    g.rect(b.x, b.y + b.h - h + 7, b.w, 5).fill(0xf97316);
+    g.rect(b.x, b.y + b.h - 5, b.w, 5).fill(0x262b33);
+    for (let x = b.x + 12; x < b.x + b.w - 6; x += 20) g.rect(x, b.y + b.h - h + 14, 1.2, h - 20).fill({ color: WHITE, alpha: 0.12 });
+    // Papers, a stamp and a card terminal on the top
+    g.rect(b.x + 4, b.y - h + 10, 14, 11).fill(WHITE);
+    g.rect(b.x + 6, b.y - h + 13, 9, 1).fill(0x94a3b8);
+    g.rect(b.x + 6, b.y - h + 16, 7, 1).fill(0x94a3b8);
+    g.roundRect(b.x + b.w - 16, b.y - h + 9, 10, 14, 2).fill(0x1f2937);
+    g.rect(b.x + b.w - 14, b.y - h + 11, 6, 4).fill(0x60a5fa);
+    g.roundRect(b.x, b.y - h, b.w, b.h + h, 5).stroke({ width: 1.5, color: INK, alpha: 0.3 });
     // Register: body, display, keys
     const cx = b.x + b.w / 2;
     const top = b.y - h;

@@ -68,6 +68,7 @@ class Stage {
     wh.drainEvents();
     this.h.enterLocation(wh);
     this.h.world.cinematic = true;
+    this.h.world.daylight.fixed = 0.3;
     this.h.input.read = () => this.intent;
   }
 
@@ -259,6 +260,7 @@ export async function makeThumbnails(host: PromoHost): Promise<string[]> {
   // Back to normal play.
   host.input.read = orig;
   host.world.cinematic = false;
+  host.world.daylight.fixed = null;
   host.camera.fixedZoom = null;
   host.camera.pin = null;
   host.camera.resize(app.screen.width, app.screen.height);

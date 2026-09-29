@@ -7,7 +7,7 @@ import { BACK_WALL, WALL, type Layout, type LocationJson } from '../../sim/layou
 import type { Warehouse } from '../../sim/warehouse.ts';
 import { drawGlass } from '../art.ts';
 import type { Atlas } from '../atlas.ts';
-import { DISTRICT_COLORS, INK, THEMES, WHITE, type Theme } from '../palette.ts';
+import { DISTRICT_COLORS, INK, THEMES, WHITE, shade, type Theme } from '../palette.ts';
 import { FONT } from '../text.ts';
 import { Outdoor } from './outdoor.ts';
 import { drawHatch } from './props.ts';
@@ -121,6 +121,22 @@ export class Background {
   /** Zone markings per district, shown once the district is built. */
   readonly districtZones: Graphics[] = [];
   private readonly theme: Theme;
+  /** Sunlight falling through the windows (strength follows the time of day). */
+  readonly sunlight = new Graphics();
+  /** Pools of light under the ceiling lamps (stronger at night). */
+  readonly lampLight = new Graphics();
+  /** x of the steel columns on the back wall (their lamps glow at night). */
+  columnXs: number[] = [];
+  /** y of the lamps on those columns. */
+  readonly columnLampY = BACK_WALL - WALL_H + 11.5;
+  /** Multiply layer darkening the outdoor ground at dusk and night. */
+  readonly nightShade = new Graphics();
+  /** Additive light pools on the outdoor ground (lamps, headlights). */
+  readonly groundLights = new Container();
+  /** Glass of the back-wall windows, tinted with the sky colour. */
+  readonly windowGlass = new Graphics();
+  /** The building shell (dimmed a little at night). */
+  walls: Graphics | null = null;
   /** Street, lots and yard around the building. */
   readonly outdoor: Outdoor;
 
@@ -132,59 +148,114 @@ export class Background {
     const L = wh.layout;
     this.outdoor = new Outdoor(L, this.theme);
     this.ground.addChild(this.outdoor.ground);
+    // Night falls on the surroundings only: a multiply layer over the outdoor ground (the building's
+    // floor is drawn over it), then additive pools of lamp and headlight light.
+    const st = this.outdoor.st;
+    this.nightShade.rect(st.x0, st.y0, st.x1 - st.x0, st.y1 - st.y0).fill(WHITE);
+    this.nightShade.blendMode = 'multiply';
+    this.nightShade.visible = false;
+    this.ground.addChild(this.nightShade, this.groundLights);
     this.drawFloor(L);
     this.drawOffice(L);
     this.drawZones(L);
     this.drawWalls(L, wh.loc);
+    // Mostly static: its own render group keeps it from being rebatched every frame.
+    this.ground.isRenderGroup = true;
   }
 
   private drawFloor(L: Layout): void {
     const th = this.theme;
     const g = new Graphics();
-    g.rect(WALL, BACK_WALL, L.w - WALL * 2, L.h - BACK_WALL - WALL).fill(th.floor);
-    const tile = 64;
-    for (let y = BACK_WALL, j = 0; y < L.h - WALL; y += tile, j++) {
-      for (let x = WALL, i = 0; x < L.w - WALL; x += tile, i++) {
-        if ((i + j) % 2 === 0) continue;
-        g.rect(x, y, Math.min(tile, L.w - WALL - x), Math.min(tile, L.h - WALL - y)).fill(th.floorAlt);
-      }
-    }
-    for (let x = WALL + tile; x < L.w - WALL; x += tile) g.rect(x - 1, BACK_WALL, 2, L.h - BACK_WALL - WALL).fill({ color: th.grout, alpha: 0.7 });
-    for (let y = BACK_WALL + tile; y < L.h - WALL; y += tile) g.rect(WALL, y - 1, L.w - WALL * 2, 2).fill({ color: th.grout, alpha: 0.7 });
-    // Soft shadow along the back wall
-    g.rect(WALL, BACK_WALL, L.w - WALL * 2, 18).fill({ color: 0x000000, alpha: 0.08 });
-    // Scuffs so the floor does not look brand new.
+    const x0 = WALL;
+    const y0 = BACK_WALL;
+    const x1 = L.w - WALL;
+    const y1 = L.h - WALL;
     let seed = 11;
     const rnd = (): number => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < (L.w * L.h) / 9000; i++) {
-      const x = WALL + rnd() * (L.w - WALL * 2);
-      const y = BACK_WALL + 20 + rnd() * (L.h - BACK_WALL - WALL - 30);
-      g.ellipse(x, y, 4 + rnd() * 10, 2 + rnd() * 4).fill({ color: 0x000000, alpha: 0.03 });
-    }
-    // Hazard-painted areas (forklift parking, storage corners).
-    for (const [px, py, pw, ph] of this.wh.loc.paint ?? []) drawHatch(g, px, py, pw, ph);
-    // Sunlight falling through the windows.
-    for (const x of windowXs(L)) {
-      g.poly([x + 4, BACK_WALL, x + 88, BACK_WALL, x + 150, BACK_WALL + 150, x + 66, BACK_WALL + 150]).fill({ color: 0xfffbeb, alpha: 0.13 });
-    }
-    // Pools of light under the ceiling lamps.
-    for (let y = BACK_WALL + 150; y < L.h - 60; y += 260) {
-      for (let x = WALL + 150; x < L.w - 60; x += 280) {
-        for (let r = 5; r >= 1; r--) g.ellipse(x, y, 34 * r, 22 * r).fill({ color: 0xffffff, alpha: 0.018 });
+    // Poured concrete in large slabs, each a touch lighter or darker than its neighbours
+    g.rect(x0, y0, x1 - x0, y1 - y0).fill(th.floor);
+    const slab = 176;
+    for (let y = y0; y < y1; y += slab) {
+      for (let x = x0; x < x1; x += slab) {
+        const v = rnd();
+        g.rect(x, y, Math.min(slab, x1 - x), Math.min(slab, y1 - y)).fill({ color: v < 0.5 ? 0x000000 : 0xffffff, alpha: 0.015 + Math.abs(v - 0.5) * 0.05 });
       }
     }
+    // Trowel swirls, stains and scuffs
+    for (let i = 0; i < ((x1 - x0) * (y1 - y0)) / 4200; i++) {
+      const x = x0 + rnd() * (x1 - x0);
+      const y = y0 + 16 + rnd() * (y1 - y0 - 20);
+      g.ellipse(x, y, 3 + rnd() * 14, 1.5 + rnd() * 5).fill({ color: 0x000000, alpha: 0.018 + rnd() * 0.02 });
+    }
+    for (let i = 0; i < ((x1 - x0) * (y1 - y0)) / 60000; i++) {
+      const x = x0 + 30 + rnd() * (x1 - x0 - 60);
+      const y = y0 + 40 + rnd() * (y1 - y0 - 80);
+      g.ellipse(x, y, 16 + rnd() * 26, 8 + rnd() * 12).fill({ color: 0x3b2f22, alpha: 0.025 });
+    }
+    // Forklift tyre marks: pairs of faint curved streaks
+    for (let k = 0; k < Math.round((x1 - x0) / 160); k++) {
+      const sx = x0 + 40 + rnd() * (x1 - x0 - 80);
+      const sy = y0 + 60 + rnd() * (y1 - y0 - 120);
+      const dx = (rnd() - 0.5) * 260;
+      const dy = (rnd() - 0.5) * 160;
+      const bend = (rnd() - 0.5) * 140;
+      for (const off of [0, 13]) {
+        g.moveTo(sx, sy + off).quadraticCurveTo(sx + dx / 2 + bend, sy + dy / 2 + off - bend * 0.4, sx + dx, sy + dy + off).stroke({ width: 4, color: 0x000000, alpha: 0.035, cap: 'round' });
+      }
+    }
+    // Saw-cut joints between the slabs
+    for (let x = x0 + slab; x < x1; x += slab) {
+      g.rect(x - 0.8, y0, 1.6, y1 - y0).fill({ color: th.grout, alpha: 0.85 });
+      g.rect(x + 0.8, y0, 1, y1 - y0).fill({ color: 0xffffff, alpha: 0.18 });
+    }
+    for (let y = y0 + slab; y < y1; y += slab) {
+      g.rect(x0, y - 0.8, x1 - x0, 1.6).fill({ color: th.grout, alpha: 0.85 });
+      g.rect(x0, y + 0.8, x1 - x0, 1).fill({ color: 0xffffff, alpha: 0.18 });
+    }
+    // Soft shadow along the back wall
+    g.rect(x0, y0, x1 - x0, 22).fill({ color: 0x000000, alpha: 0.07 });
+    g.rect(x0, y0, x1 - x0, 8).fill({ color: 0x000000, alpha: 0.06 });
+    // Hazard-painted areas (forklift parking, storage corners).
+    for (const [px, py, pw, ph] of this.wh.loc.paint ?? []) drawHatch(g, px, py, pw, ph);
     this.ground.addChild(g);
+    // Sunlight through the windows and the pools under the ceiling lamps change with the time of day.
+    const sun = this.sunlight;
+    for (const x of windowXs(L)) {
+      sun.poly([x + 4, BACK_WALL, x + 88, BACK_WALL, x + 150, BACK_WALL + 150, x + 66, BACK_WALL + 150]).fill({ color: 0xfffbeb, alpha: 0.16 });
+    }
+    const lamps = this.lampLight;
+    for (let y = BACK_WALL + 150; y < L.h - 60; y += 260) {
+      for (let x = WALL + 150; x < L.w - 60; x += 280) {
+        for (let r = 5; r >= 1; r--) lamps.ellipse(x, y, 34 * r, 22 * r).fill({ color: 0xfff7e0, alpha: 0.022 });
+      }
+    }
+    this.ground.addChild(sun, lamps);
   }
 
   private drawOffice(L: Layout): void {
     const th = this.theme;
     const g = new Graphics();
     const o = L.office;
-    g.roundRect(o.x + 4, o.y + 6, o.w, o.h, 18).fill({ color: 0x000000, alpha: 0.08 });
-    g.roundRect(o.x, o.y, o.w, o.h, 18).fill(th.office);
-    g.roundRect(o.x, o.y, o.w, o.h, 18).stroke({ width: 4, color: th.officeEdge });
-    // Carpet pattern
-    for (let y = o.y + 22; y < o.y + o.h - 10; y += 22) g.rect(o.x + 12, y, o.w - 24, 2).fill({ color: WHITE, alpha: 0.12 });
+    const carpet = shade(th.office, 0.84);
+    g.roundRect(o.x + 4, o.y + 6, o.w, o.h, 14).fill({ color: 0x000000, alpha: 0.1 });
+    g.roundRect(o.x, o.y, o.w, o.h, 14).fill(carpet);
+    // Carpet tiles laid in alternating directions
+    const t = 36;
+    for (let y = o.y + 8, j = 0; y < o.y + o.h - 8; y += t, j++) {
+      for (let x = o.x + 8, i = 0; x < o.x + o.w - 8; x += t, i++) {
+        const w = Math.min(t, o.x + o.w - 8 - x);
+        const h = Math.min(t, o.y + o.h - 8 - y);
+        g.rect(x, y, w, h).fill({ color: (i + j) % 2 ? 0xffffff : 0x000000, alpha: 0.018 });
+        const across = (i + j) % 2 === 0;
+        for (let k = 5; k < (across ? h : w); k += 6) {
+          if (across) g.rect(x + 2, y + k, w - 4, 0.8).fill({ color: 0x000000, alpha: 0.03 });
+          else g.rect(x + k, y + 2, 0.8, h - 4).fill({ color: 0x000000, alpha: 0.03 });
+        }
+      }
+    }
+    // Skirting strip around the carpet
+    g.roundRect(o.x, o.y, o.w, o.h, 14).stroke({ width: 5, color: th.officeEdge });
+    g.roundRect(o.x + 2.5, o.y + 2.5, o.w - 5, o.h - 5, 12).stroke({ width: 1, color: 0xffffff, alpha: 0.3 });
     this.ground.addChild(g);
     // Column headers: who the upgrades are for
     const heads = ['person', 'sorter', 'loader', 'collector'] as const;
@@ -241,11 +312,33 @@ export class Background {
     g.rect(-6, BACK_WALL - 10, L.w + 12, 10).fill(th.wallTrim);
     const signW = 300;
     const sx = L.w / 2 - signW / 2;
+    // Insulated wall panels, a girt near the top and a concrete plinth at the floor
+    for (let x = 0; x < L.w; x += 42) g.rect(x, top + 2, 1.4, WALL_H - 14).fill({ color: 0x000000, alpha: 0.07 });
+    g.rect(-6, top, L.w + 12, 5).fill({ color: 0x000000, alpha: 0.1 });
+    g.rect(-6, top + 64, L.w + 12, 2).fill({ color: 0x000000, alpha: 0.08 });
+    g.rect(-6, BACK_WALL - 20, L.w + 12, 10).fill(shade(th.wallTrim, 1.25));
+    g.rect(-6, BACK_WALL - 20, L.w + 12, 2).fill({ color: WHITE, alpha: 0.25 });
     for (const x of windowXs(L)) {
-      g.roundRect(x, top + 16, 92, 44, 6).fill(0xbfe3f5);
-      g.roundRect(x, top + 16, 92, 44, 6).stroke({ width: 4, color: WHITE });
-      g.rect(x + 44, top + 16, 4, 44).fill(WHITE);
+      g.roundRect(x - 3, top + 13, 98, 50, 6).fill(shade(th.wallFace, 0.8));
+      g.roundRect(x, top + 16, 92, 44, 5).fill(0xbfe3f5);
+      g.rect(x + 44, top + 16, 4, 44).fill(0xe5e7eb);
+      g.rect(x, top + 37, 92, 2.5).fill(0xe5e7eb);
       g.poly([x + 8, top + 52, x + 30, top + 22, x + 40, top + 22, x + 18, top + 52]).fill({ color: WHITE, alpha: 0.4 });
+      g.roundRect(x, top + 16, 92, 44, 5).stroke({ width: 3, color: 0xe5e7eb });
+    }
+    // Steel columns between the windows, each with a lamp at the top
+    this.columnXs = [];
+    const signL = L.w / 2 - 160;
+    const signR = L.w / 2 + 160;
+    for (let x = 290; x < L.w - 60; x += 210) if (x + 10 < signL || x - 10 > signR) this.columnXs.push(x);
+    this.columnXs.push(14, L.w - 14);
+    for (const cx of this.columnXs) {
+      g.rect(cx - 8, top - 22, 16, WALL_H + 22).fill(0x4b5563);
+      g.rect(cx - 8, top - 22, 3, WALL_H + 22).fill(0x6b7280);
+      g.rect(cx + 5, top - 22, 3, WALL_H + 22).fill(0x374151);
+      g.rect(cx - 11, BACK_WALL - 5, 22, 5).fill(0x374151);
+      g.roundRect(cx - 12, top + 4, 24, 8, 2).fill(0x1f2937);
+      g.roundRect(cx - 10, top + 10, 20, 3, 1.5).fill(0xfef3c7);
     }
     // Decorations in the gaps between windows.
     const decor = [drawClock, drawPoster, drawBoard, drawMap, drawExtinguisher];
@@ -280,7 +373,24 @@ export class Background {
     // Front wall (low)
     g.rect(0, L.h - WALL, L.w, WALL).fill(th.wallTop);
     g.rect(0, L.h - 8, L.w, 8).fill(th.wallFace);
+    // Column heads along the side and front walls, clear of the doors
+    const cap = (x: number, y: number): void => {
+      g.rect(x - 8, y - 8, 16, 16).fill(shade(th.wallTop, 0.82));
+      g.rect(x - 8, y - 8, 16, 16).stroke({ width: 1, color: INK, alpha: 0.2 });
+    };
+    for (let y = BACK_WALL + 200; y < L.h - 80; y += 210) {
+      if (!L.belts.some((b) => Math.abs(b.y - y) < 60)) cap(WALL / 2, y);
+      if (!L.docks.some((d) => Math.abs(d.y - y) < 70)) cap(L.w - WALL / 2, y);
+    }
+    for (let x = 290; x < L.w - 60; x += 420) cap(x, L.h - WALL / 2);
     this.ground.addChild(g);
+    this.walls = g;
+    for (const x of windowXs(L)) {
+      for (const [px, py] of [[x + 1.5, top + 17.5], [x + 48, top + 17.5], [x + 1.5, top + 39.5], [x + 48, top + 39.5]] as const) {
+        this.windowGlass.rect(px, py, 42.5, 19).fill(WHITE);
+      }
+    }
+    this.windowGlass.alpha = 0;
 
     const name = new Text({
       text: t(loc.name).toUpperCase(),
@@ -290,6 +400,7 @@ export class Background {
     name.position.set(L.w / 2 + 22, top + 37);
     if (name.width > signW - 80) name.scale.set((signW - 80) / name.width);
     this.ground.addChild(name);
+    this.ground.addChild(this.windowGlass);
   }
 
   /** Called each frame; cheap. */

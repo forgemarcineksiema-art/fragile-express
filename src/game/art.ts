@@ -4,8 +4,12 @@
 import type { Graphics } from 'pixi.js';
 import { COIN, COIN_DARK, COIN_LIGHT, INK, WHITE, shade, type SymbolKind } from './palette.ts';
 
-export const PARCEL = { w: 26, d: 12, h: 16 };
-export const PARCEL_XXL = { w: 40, d: 18, h: 26 };
+export const PARCEL = { w: 30, d: 14, h: 16 };
+export const PARCEL_XXL = { w: 44, d: 20, h: 26 };
+/** Corrugated cardboard: front face, lid and edges. */
+const CARD = 0xc79a62;
+const CARD_TOP = 0xd9b07a;
+const CARD_EDGE = 0x9c7240;
 
 export function drawSymbol(g: Graphics, x: number, y: number, s: number, kind: SymbolKind, color: number): void {
   switch (kind) {
@@ -69,55 +73,72 @@ export function drawParcel(
   kind: 'normal' | 'fragile' | 'express' | 'xxl',
   sorted: boolean,
 ): void {
-  const { w, d, h } = kind === 'xxl' ? PARCEL_XXL : PARCEL;
+  // A corrugated cardboard box: the district shows on the tape over the lid and on a big sticker on
+  // the front, so colour still reads at a glance; fragile and express get their own tape and label.
+  const big = kind === 'xxl';
+  const { w, d, h } = big ? PARCEL_XXL : PARCEL;
   const left = x - w / 2;
   const topY = by - h - d;
-  const front = color;
-  const top = shade(color, 1.22);
-  // Faces
-  g.rect(left, by - h, w, h).fill(front);
-  g.rect(left, topY, w, d).fill(top);
-  // Soft vertical shading on the front face
-  g.rect(left, by - 3, w, 3).fill({ color: 0x000000, alpha: 0.12 });
-  // Tape across the lid and down the front
-  const tape = kind === 'fragile' ? 0xfef2f2 : kind === 'express' ? 0xfde047 : shade(color, 1.5);
-  const tw = kind === 'xxl' ? 8 : 5;
-  g.rect(x - tw / 2, topY, tw, d).fill({ color: tape, alpha: 0.9 });
-  g.rect(x - tw / 2, by - h, tw, h * 0.35).fill({ color: tape, alpha: 0.9 });
+  g.rect(left, by - h, w, h).fill(CARD);
+  g.rect(left, topY, w, d).fill(CARD_TOP);
+  // Flap seam across the lid, a darker band at the bottom, corner creases
+  g.rect(left, topY + d / 2 - 0.5, w, 1).fill({ color: CARD_EDGE, alpha: 0.8 });
+  g.rect(left, by - 3, w, 3).fill({ color: 0x000000, alpha: 0.1 });
+  g.rect(left + w - 4, by - h, 4, h).fill({ color: 0x000000, alpha: 0.07 });
+  g.rect(left, by - h, w, 1.2).fill({ color: WHITE, alpha: 0.25 });
+  // Tape over the lid and down the front
+  const tw = big ? 13 : 9;
+  const tape = kind === 'fragile' ? 0xfff1f1 : kind === 'express' ? 0xfacc15 : color;
+  const tapeLen = h * (big ? 0.34 : 0.42);
+  g.rect(x - tw / 2, topY, tw, d).fill(tape);
+  g.rect(x - tw / 2, by - h, tw, tapeLen).fill(tape);
+  g.rect(x - tw / 2, topY, tw, d + tapeLen).fill({ color: WHITE, alpha: 0.12 });
   if (kind === 'fragile') {
-    // Red hazard ticks on the tape
-    for (let i = 0; i < 3; i++) g.rect(x - tw / 2, topY + 1 + i * 4, tw, 2).fill(0xdc2626);
+    for (let yy = topY + 1.5; yy < by - h + tapeLen - 1; yy += 4) g.rect(x - tw / 2, yy, tw, 1.6).fill(0xdc2626);
+  } else if (kind === 'express') {
+    for (let yy = topY + 1; yy < by - h + tapeLen - 1; yy += 4) g.poly([x - tw / 2, yy + 2, x - tw / 2 + 2, yy, x + tw / 2, yy, x + tw / 2 - 2, yy + 2]).fill(0x1f2937);
   }
-  // Lid edge highlight
-  g.rect(left, by - h - 1, w, 1.5).fill({ color: WHITE, alpha: 0.35 });
-  // District symbol (always), plus the fragile glass / express bolt
-  const sy = by - h * 0.42;
-  const ss = kind === 'xxl' ? 11 : 7;
-  if (kind === 'normal' || kind === 'xxl') {
-    g.circle(x, sy, ss * 0.78).fill({ color: WHITE, alpha: 0.95 });
-    drawSymbol(g, x, sy, ss * 0.9, symbol, shade(color, 0.72));
+  g.moveTo(x - tw / 2, topY).lineTo(x - tw / 2, by - h + tapeLen).moveTo(x + tw / 2, topY).lineTo(x + tw / 2, by - h + tapeLen).stroke({ width: 0.6, color: 0x000000, alpha: 0.2 });
+  // District sticker: white margin, district colour, white symbol
+  const special = kind === 'fragile' || kind === 'express';
+  const lw = big ? 21 : special ? 13 : 16;
+  const lh = big ? 14 : 10;
+  const lx = special ? x - lw / 2 - 5.2 : x - lw / 2;
+  const ly = by - h + (big ? 8 : 4.6);
+  g.roundRect(lx - 1.2, ly - 1.2, lw + 2.4, lh + 2.4, 2).fill(WHITE);
+  g.roundRect(lx, ly, lw, lh, 1.4).fill(color);
+  drawSymbol(g, lx + lw / 2, ly + lh / 2, big ? 9 : 6.4, symbol, WHITE);
+  g.roundRect(lx - 1.2, ly - 1.2, lw + 2.4, lh + 2.4, 2).stroke({ width: 0.7, color: INK, alpha: 0.25 });
+  if (special) {
+    // Handling label to the right of the sticker
+    const hx = lx + lw + 2.6;
+    const hw = 8.4;
+    g.roundRect(hx, ly - 1.2, hw, lh + 2.4, 1.4).fill(kind === 'fragile' ? 0xdc2626 : 0x1f2937);
+    if (kind === 'fragile') drawGlass(g, hx + hw / 2, ly + lh / 2 + 0.4, 8.4, WHITE);
+    else drawBolt(g, hx + hw / 2, ly + lh / 2, 9, 0xfacc15);
   } else {
-    g.circle(x - 6, sy, 5.4).fill({ color: WHITE, alpha: 0.95 });
-    drawSymbol(g, x - 6, sy, 6.2, symbol, shade(color, 0.72));
-    if (kind === 'fragile') {
-      g.roundRect(x + 1, sy - 6, 11, 12, 2).fill(0xdc2626);
-      drawGlass(g, x + 6.5, sy - 0.5, 9, WHITE);
-    } else {
-      g.roundRect(x + 1, sy - 6, 11, 12, 2).fill(0x1e293b);
-      drawBolt(g, x + 6.5, sy, 10, 0xfde047);
+    // "This way up" arrows printed on the cardboard
+    const ax = left + (big ? 5 : 3.4);
+    const ay = by - h + (big ? 7 : 5);
+    for (const dx of [0, 2.6]) {
+      g.poly([ax + dx, ay, ax + dx + 1.2, ay + 1.8, ax + dx - 1.2, ay + 1.8]).fill({ color: 0x3b2a1a, alpha: 0.55 });
+      g.rect(ax + dx - 0.35, ay + 1.6, 0.7, 2.6).fill({ color: 0x3b2a1a, alpha: 0.55 });
     }
   }
   if (sorted) {
-    // Address label on the lid
-    const lw = kind === 'xxl' ? 14 : 9;
-    const lx = x + w / 2 - lw - 3;
-    g.rect(lx, topY + 2, lw, d - 4).fill(WHITE);
-    g.rect(lx + 1.5, topY + 3.5, lw - 3, 1).fill(0x94a3b8);
-    g.rect(lx + 1.5, topY + 6, lw - 5, 1).fill(0x94a3b8);
+    // Shipping label with a barcode on the lid
+    const sw = big ? 15 : 9.5;
+    const sx = x + tw / 2 + 1.6;
+    const sy = topY + 1.8;
+    const sh = d - 3.6;
+    g.rect(sx, sy, sw, sh).fill(WHITE);
+    for (let k = 0; k < sw - 3; k += 1.4) g.rect(sx + 1.4 + k, sy + sh - 4, k % 2.8 < 1.4 ? 0.8 : 0.5, 3).fill(0x334155);
+    g.rect(sx + 1.4, sy + 1.3, sw - 4, 0.9).fill(0x94a3b8);
+    g.rect(sx, sy, sw, sh).stroke({ width: 0.5, color: INK, alpha: 0.3 });
   }
   // Outline
   g.rect(left, topY, w, d + h).stroke({ width: 1.2, color: INK, alpha: 0.45, alignment: 1 });
-  g.moveTo(left, by - h).lineTo(left + w, by - h).stroke({ width: 1, color: INK, alpha: 0.25 });
+  g.moveTo(left, by - h).lineTo(left + w, by - h).stroke({ width: 1, color: CARD_EDGE, alpha: 0.9 });
 }
 
 /** Five-point star squashed vertically by `sy` (embossed on coins). */

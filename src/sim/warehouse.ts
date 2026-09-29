@@ -148,6 +148,8 @@ export class Warehouse {
     }
     this.applyLevels();
     if (!save) this.freshStart();
+    // Belt contents are not saved: a returning player finds parcels waiting, as on a fresh start.
+    else this.fillBelts();
     this.refreshPads(true);
     this.loaded = true;
   }
@@ -156,12 +158,16 @@ export class Warehouse {
   // Setup
   // -------------------------------------------------------------------------------------------
 
-  private freshStart(): void {
+  private fillBelts(): void {
     for (let i = 0; i < this.belts.length; i++) {
       const b = this.belts[i]!;
       const n = this.loc.belts[i]!.preload ?? 0;
       for (let k = 0; k < n; k++) b.preload(this.makeParcel('normal', this.randomDistrict()));
     }
+  }
+
+  private freshStart(): void {
+    this.fillBelts();
     const van = this.docks[0]?.loadingVan();
     if (van) {
       for (let k = 0; k < this.loc.vanPreload; k++) {

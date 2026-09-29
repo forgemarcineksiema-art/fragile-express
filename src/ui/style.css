@@ -184,7 +184,8 @@ body {
 .toast {
   position: absolute;
   left: 50%;
-  top: 22%;
+  /* Just under the HUD row, clear of the middle of the play area. */
+  top: calc(var(--u) * 4.6);
   transform: translate(-50%, 0) scale(0.9);
   max-width: min(84vw, 620px);
   padding: calc(var(--u) * 0.8) calc(var(--u) * 1.5);

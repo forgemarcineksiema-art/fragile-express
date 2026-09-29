@@ -10,9 +10,8 @@ import {
   CAR_COLORS,
   drawBench,
   drawBin,
+  carContext,
   drawBollard,
-  drawCarEnd,
-  drawCarSide,
   drawHydrant,
   drawLamp,
   drawParkingSign,
@@ -20,6 +19,7 @@ import {
 } from '../art-outdoor.ts';
 import { WHITE, shade, type Theme } from '../palette.ts';
 import { FONT } from '../text.ts';
+import { Parking } from './parking.ts';
 
 /** How far past the building the camera may look. */
 export const WORLD_MARGIN = { left: 250, right: 400, top: 190, bottom: 230 };
@@ -74,8 +74,8 @@ export function outdoorGeom(L: Layout): Street {
       { y: h + 88, dir: -1 },
       { y: h + 164, dir: 1 },
     ],
-    back: { x: -30, y: -200, w: L.w + 20, h: 200 + BACK_WALK },
-    yard: { x: L.w - 10, y: -200, w: x1 - L.w + 10, h: h + 46 + 200 },
+    back: { x: -30, y: -240, w: L.w + 20, h: 240 + BACK_WALK },
+    yard: { x: L.w - 10, y: -240, w: x1 - L.w + 10, h: h + 46 + 240 },
     west,
   };
 }
@@ -102,12 +102,9 @@ function context(p: Placed): GraphicsContext {
     const color = p.color ?? 0;
     switch (p.kind) {
       case 'side':
-        drawCarSide(c, color);
-        break;
       case 'nose':
       case 'tail':
-        drawCarEnd(c, color, p.kind === 'nose');
-        break;
+        return carContext(p.kind, color);
       case 'lamp':
         drawLamp(c);
         break;
@@ -168,6 +165,12 @@ export class Outdoor {
   private readonly entityThings: Placed[] = [];
   private layer: Container | null = null;
   private readonly traffic: TrafficCar[] = [];
+  private readonly thingNodes: Graphics[] = [];
+  private tint = 0xffffff;
+  /** Cars coming and going on the car parks. */
+  readonly parking = new Parking();
+  /** Street lamps: the lamp head and the ground point beneath it (for night lighting). */
+  readonly lamps: { hx: number; hy: number; gx: number; gy: number }[] = [];
   private readonly spawnT = [0.6, 2.2];
   private seed: number;
 
@@ -181,6 +184,30 @@ export class Outdoor {
     this.drawGround(statics);
     statics.sort((a, b) => sortY(a) - sortY(b));
     for (const p of statics) this.ground.addChild(node(p, false));
+    for (const p of [...statics, ...this.entityThings]) {
+      if (p.kind !== 'lamp') continue;
+      const hx = p.x + (p.flip ? 22 : -22);
+      this.lamps.push({ hx, hy: p.y - 108, gx: hx, gy: p.y + 4 });
+    }
+  }
+
+  /** Night tint for everything outside that stands up from the ground. */
+  setTint(t: number): void {
+    this.tint = t;
+    for (const n of this.thingNodes) n.tint = t;
+    for (const c of this.traffic) c.node.tint = t;
+    this.parking.setTint(t);
+  }
+
+  /** Where headlight beams fall in front of every moving car. */
+  headlights(): { x: number; y: number; vertical: boolean }[] {
+    const out: { x: number; y: number; vertical: boolean }[] = [];
+    for (const c of this.traffic) {
+      const dir = this.st.lanes[c.lane]!.dir;
+      out.push({ x: c.x + dir * 100, y: this.st.lanes[c.lane]!.y + 8, vertical: false });
+    }
+    this.parking.headlights(out);
+    return out;
   }
 
   private rnd(): number {
@@ -195,7 +222,12 @@ export class Outdoor {
   /** Adds the yard and street objects and the traffic to the Y-sorted entity layer. */
   attach(layer: Container): void {
     this.layer = layer;
-    for (const p of this.entityThings) layer.addChild(node(p, true));
+    for (const p of this.entityThings) {
+      const n = node(p, true);
+      this.thingNodes.push(n);
+      layer.addChild(n);
+    }
+    this.parking.attach(layer);
     // Start with a few cars already on the road.
     for (let lane = 0; lane < this.st.lanes.length; lane++) {
       for (let k = 0; k < 3; k++) this.spawn(lane, this.st.x0 + 200 + Math.random() * (this.st.x1 - this.st.x0 - 400));
@@ -228,9 +260,10 @@ export class Outdoor {
     const bk = st.back;
     pave(bk.x, bk.y, bk.w, bk.h, asphalt);
     const spaceY0 = BACK_WALK - 104;
+    const backLot = this.parking.addLot(spaceY0 - 26, -1, st.x1 - 140);
     for (let sx = 0; sx + SPACE <= L.w - 20; sx += SPACE) {
       this.spaceLines(g, sx, spaceY0, SPACE, 100, 'v');
-      this.maybePark(statics, sx + SPACE / 2, spaceY0 + 52, 0.7);
+      this.parking.addSpace(backLot, sx + SPACE / 2, spaceY0 + 52, this.parkChoice(0.7), this.carColor());
     }
     // Pavement strip along the back wall
     g.rect(bk.x, BACK_WALK, bk.w, 26).fill(PAVE);
@@ -283,10 +316,12 @@ export class Outdoor {
       if (docks[docks.length - 1]! + 170 <= L.h + 30) rows.push(docks[docks.length - 1]! + 66);
     }
     for (const ry of rows) {
+      const north = ry < docks[0]!;
+      const lot = this.parking.addLot(north ? ry - 30 : ry + 128, north ? -1 : 1, st.x1 - 140);
       for (let k = 0; k < 6; k++) {
         const sx = L.w + 24 + k * SPACE;
         this.spaceLines(g, sx, ry, SPACE, 98, 'v');
-        this.maybePark(this.entityThings, sx + SPACE / 2, ry + 50, 0.6);
+        this.parking.addSpace(lot, sx + SPACE / 2, ry + 50, this.parkChoice(0.6), this.carColor());
       }
       this.entityThings.push({ kind: 'lamp', x: L.w + 20, y: ry < docks[0]! ? ry + 2 : ry + 96, flip: true });
     }
@@ -367,9 +402,10 @@ export class Outdoor {
     }
   }
 
-  private maybePark(into: Placed[], x: number, y: number, chance: number): void {
-    if (this.rnd() >= chance) return;
-    into.push({ kind: this.rnd() < 0.6 ? 'nose' : 'tail', x: x + (this.rnd() - 0.5) * 4, y: y + (this.rnd() - 0.5) * 6, color: this.carColor() });
+  /** Whether a space starts occupied, and which way the car faces. */
+  private parkChoice(chance: number): 'nose' | 'tail' | null {
+    if (this.rnd() >= chance) return null;
+    return this.rnd() < 0.6 ? 'nose' : 'tail';
   }
 
   private spawn(lane: number, at: number | null): void {
@@ -378,6 +414,7 @@ export class Outdoor {
     const x = at ?? (l.dir > 0 ? this.st.x0 + 110 : this.st.x1 - 110);
     if (this.traffic.some((c) => c.lane === lane && Math.abs(c.x - x) < CAR.len + 70)) return;
     const n = node({ kind: 'side', x, y: l.y, color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]!, flip: l.dir < 0 }, true);
+    n.tint = this.tint;
     this.layer.addChild(n);
     const vmax = 150 + Math.random() * 90;
     this.traffic.push({ node: n, x, lane, v: vmax, vmax });
@@ -387,6 +424,7 @@ export class Outdoor {
   update(dt: number): void {
     if (!this.layer || dt <= 0) return;
     dt = Math.min(dt, 0.1);
+    this.parking.update(dt);
     const st = this.st;
     for (let i = 0; i < this.spawnT.length; i++) {
       this.spawnT[i]! -= dt;

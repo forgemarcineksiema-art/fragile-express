@@ -73,10 +73,10 @@ export function buildAtlas(renderer: Renderer, resolution = 2): Atlas {
         const big = kind === 'xxl';
         e.push({
           name: parcelTex(d, kind, sorted),
-          w: big ? 46 : 30,
-          h: big ? 48 : 32,
-          ax: big ? 23 : 15,
-          ay: big ? 46 : 30,
+          w: big ? 50 : 34,
+          h: big ? 50 : 34,
+          ax: big ? 25 : 17,
+          ay: big ? 48 : 32,
           draw: (g, x, y) => drawParcel(g, x, y, DISTRICT_COLORS[d]!, DISTRICT_SYMBOLS[d]!, kind, sorted),
         });
       }

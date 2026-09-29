@@ -3,6 +3,7 @@ import { Container, Graphics, Sprite, type Renderer, type Text } from 'pixi.js';
 import { lerp } from '../core/math.ts';
 import { PARCEL, PARCEL_XXL } from './art.ts';
 import type { Atlas } from './atlas.ts';
+import { Daylight } from './daylight.ts';
 import { Fx } from './fx.ts';
 import { label, formatTime, setText } from './text.ts';
 import { Background } from './views/background.ts';
@@ -24,6 +25,8 @@ export class WorldView {
   readonly entities = new Container();
   readonly overlay = new Container();
   readonly fx: Fx;
+  /** Time of day: dusk, night lighting and dawn. */
+  readonly daylight: Daylight;
   readonly chars = new Map<number, CharacterView>();
   readonly shelves: ShelfView[];
   readonly docks: DockView[];
@@ -97,7 +100,11 @@ export class WorldView {
     this.parcels.spawnOrigin = (belt) => this.trucks[belt]?.handsPoint() ?? null;
     this.fx = new Fx(atlas);
     this.fx.layer.sortableChildren = true;
-    this.overlay.addChild(this.fx.layer, this.parcels.timers, this.wobble);
+    this.daylight = new Daylight(this.bg, this.bg.outdoor, () => [
+      ...this.docks.map((d) => d.node),
+      ...this.trucks.flatMap((t) => [t.node, t.worker.node, t.worker.front, t.held]),
+    ]);
+    this.overlay.addChild(this.daylight.blooms, this.fx.layer, this.parcels.timers, this.wobble);
     this.wobbleIcon = new Sprite(atlas.get('icon_glass'));
     this.wobbleIcon.scale.set(0.34);
     this.overlay.addChild(this.wobbleIcon);
@@ -232,6 +239,7 @@ export class WorldView {
     }
     this.bg.update();
     this.bg.outdoor.update(dt);
+    this.daylight.update(wh.time);
     for (const b of this.belts) b.update(dt);
     for (const t of this.trucks) t.update(dt, time, (x, y) => this.fx.puff(x, y));
     for (const s of this.shelves) s.update(dt);

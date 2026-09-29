@@ -2,7 +2,7 @@
 // east-west) and from the front or rear (parked north-south), street lamps and street furniture.
 // Same oblique convention as the rest of the game: the footprint's top face is lifted by the
 // object's height and only the south-facing side is visible.
-import type { GraphicsContext } from 'pixi.js';
+import { GraphicsContext } from 'pixi.js';
 import { INK, WHITE, mix, shade } from './palette.ts';
 
 /** Footprint of a car: length along its driving axis, width across it. */
@@ -192,4 +192,19 @@ export function drawPlanter(g: GraphicsContext, leaf: number): void {
   g.circle(6, -21, 8).fill(shade(leaf, 0.8));
   g.circle(0, -27, 9).fill(leaf);
   g.circle(-3, -30, 4).fill({ color: WHITE, alpha: 0.15 });
+}
+
+const carCache = new Map<string, GraphicsContext>();
+
+/** Shared geometry for a car of one colour seen from the side, the front ('nose') or the rear. */
+export function carContext(kind: 'side' | 'nose' | 'tail', color: number): GraphicsContext {
+  const key = `${kind}_${color}`;
+  let c = carCache.get(key);
+  if (!c) {
+    c = new GraphicsContext();
+    if (kind === 'side') drawCarSide(c, color);
+    else drawCarEnd(c, color, kind === 'nose');
+    carCache.set(key, c);
+  }
+  return c;
 }

@@ -12,7 +12,7 @@ import { label, setText } from '../text.ts';
 const ARRIVE_FROM = 470;
 const LEAVE_TO = 640;
 const QUEUE_GAP = 205;
-const PALLET = { w: 50, d: 40, h: 8 };
+const PALLET = { w: 60, d: 44, h: 8 };
 
 const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 const easeInQuad = (t: number): number => t * t;
@@ -180,7 +180,7 @@ export class DockView {
     const t = p.y - PALLET.d / 2;
     g.rect(l + 3, t + 5, PALLET.w, PALLET.d).fill({ color: 0x000000, alpha: 0.16 });
     g.rect(l, t - PALLET.h, PALLET.w, PALLET.d).fill(0xc08a4e);
-    for (let k = 0; k < 4; k++) g.rect(l, t - PALLET.h + 2 + k * 10, PALLET.w, 6).fill(0xd9a066);
+    for (let k = 0; k < 4; k++) g.rect(l, t - PALLET.h + 2 + k * 11, PALLET.w, 7).fill(0xd9a066);
     g.rect(l, t + PALLET.d - PALLET.h, PALLET.w, PALLET.h).fill(0x8b5a2b);
     for (const bx of [l + 2, l + PALLET.w / 2 - 4, l + PALLET.w - 10]) g.rect(bx, t + PALLET.d - PALLET.h + 1, 8, PALLET.h - 2).fill(0x5b3a1b);
     g.rect(l, t - PALLET.h, PALLET.w, PALLET.d + PALLET.h).stroke({ width: 1.2, color: INK, alpha: 0.3 });
@@ -202,8 +202,8 @@ export class DockView {
     const layer = Math.floor(i / 4);
     const k = i % 4;
     return {
-      x: p.x + (k % 2 === 0 ? -12 : 12),
-      y: p.y + (k < 2 ? -7 : 7) - layer * 0.5,
+      x: p.x + (k % 2 === 0 ? -15 : 15),
+      y: p.y + (k < 2 ? -8 : 8) - layer * 0.5,
       z: PALLET.h + layer * (PARCEL.h + 0.5),
     };
   }
