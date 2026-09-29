@@ -39,7 +39,7 @@ export function padTitleKey(pad: Pad): string {
     case 'hire':
       return `hire.${d.role}`;
     default:
-      return `pad.${d.type}`;
+      return pad.id === 'franchise' ? 'pad.franchise' : `pad.${d.type}`;
   }
 }
 
@@ -271,7 +271,7 @@ export class PadTooltip {
       const max = wh.padCap(pad);
       return t('pad.level', { a: next, b: max });
     }
-    if (d.type === 'move') return t('pad.moveHint');
+    if (d.type === 'move') return t(pad.id === 'franchise' ? 'pad.franchiseHint' : 'pad.moveHint');
     if (d.type === 'van2') return t('pad.van2Hint');
     if (d.type === 'district') return t('pad.districtHint');
     return t(`hire.${d.role}.hint`);

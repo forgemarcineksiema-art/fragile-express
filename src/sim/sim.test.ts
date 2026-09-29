@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUBBLE_DURATION, CASH_SHARE, COURIER_BONUS, COURIER_FIRST_DELAY, COURIER_PAY, COURIER_WALK, FRAGILE, levelCost, payout, playerCapacity } from './economy.ts';
-import { LOCATIONS } from './locations.ts';
+import { locationFor, LOCATIONS } from './locations.ts';
 import type { LocationJson } from './layout.ts';
 import { NavGraph } from './nav.ts';
 import { automationRate, offlineEarnings } from './offline.ts';
@@ -63,14 +63,21 @@ describe('belt and stack', () => {
     expect(wh.player.stack.length).toBe(playerCapacity(0));
   });
 
-  it('carries an XXL parcel alone', () => {
+  it('an XXL parcel takes three places in the stack', () => {
     const wh = new Warehouse(loc(), null, { noAds: true });
     const c = wh.player;
+    c.capacity = 6;
     c.stack.push(parcel(wh, 'xxl', 0));
-    expect(c.canTake(parcel(wh, 'normal', 0))).toBe(false);
-    c.stack.length = 0;
-    c.stack.push(parcel(wh, 'normal', 0));
+    expect(c.room()).toBe(3);
+    c.stack.push(parcel(wh, 'normal', 0), parcel(wh, 'normal', 0));
+    expect(c.canTake(parcel(wh, 'normal', 0))).toBe(true);
     expect(c.canTake(parcel(wh, 'xxl', 0))).toBe(false);
+    c.stack.push(parcel(wh, 'normal', 0));
+    expect(c.isFull()).toBe(true);
+    // An empty carrier can always lift one, even an XXL parcel.
+    c.stack.length = 0;
+    c.capacity = 2;
+    expect(c.canTake(parcel(wh, 'xxl', 0))).toBe(true);
   });
 });
 
@@ -439,6 +446,28 @@ describe('courier orders', () => {
     wh.applyLevels();
     run(wh, 120);
     expect(wh.courier.state).toBe('away');
+  });
+});
+
+describe('franchise', () => {
+  it('each franchise raises every payout for good; old saves start with none', () => {
+    expect(locationFor('poczta', 0).multiplier).toBe(1);
+    expect(locationFor('poczta', 2).multiplier).toBe(2);
+    expect(locationFor('hub', 1).multiplier).toBe(LOCATIONS.hub!.multiplier * 1.5);
+    const save = migrate({ v: SAVE_VERSION, t: 1, playTime: 0, current: new Warehouse(loc(), null).toSave(), settings: {}, flags: {} })!;
+    expect(save.franchise).toBe(0);
+  });
+
+  it('the hub ends with a franchise pad once everything else is done', () => {
+    const hub = LOCATIONS.hub!;
+    const pad = hub.pads.find((p) => p.id === 'franchise')!;
+    expect(pad.type).toBe('move');
+    const milestones = hub.pads.filter((p) => p.type !== 'upgrade' && p.id !== 'franchise').map((p) => p.id);
+    const wh = new Warehouse(hub, null, { noAds: true });
+    for (const id of milestones) wh.levels[id] = 1;
+    wh.applyLevels();
+    wh.step(DT);
+    expect(wh.pads.find((p) => p.id === 'franchise')!.visible).toBe(true);
   });
 });
 

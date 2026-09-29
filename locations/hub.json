@@ -379,6 +379,7 @@
     { "id":  "van2_4", "type":  "van2", "district":  4, "at":  [1270, 1275], "requires":  ["district5"] },
     { "id":  "van2_5", "type":  "van2", "district":  5, "at":  [1270, 1515], "requires":  ["district5"] },
     { "id":  "hire_sorter3", "type":  "hire", "role":  "sorter", "slot":  [1, 3], "requires":  ["hire_collector2"] },
-    { "id":  "hire_loader3", "type":  "hire", "role":  "loader", "slot":  [2, 3], "requires":  ["hire_collector2"] }
+    { "id":  "hire_loader3", "type":  "hire", "role":  "loader", "slot":  [2, 3], "requires":  ["hire_collector2"] },
+    { "id":  "franchise", "type":  "move", "at":  [1000, 1420], "cost":  80000, "requires":  ["hire_sorter3", "hire_loader3", "hire_collector2", "van2_0", "van2_1", "van2_2", "van2_3", "van2_4", "van2_5"], "reveal":  true }
   ]
 }

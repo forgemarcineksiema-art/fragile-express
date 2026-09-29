@@ -44,6 +44,7 @@ export class WorldView {
   private readonly tooltip: PadTooltip;
   private readonly wobble = new Graphics();
   private readonly wrap = new Graphics();
+  private readonly maxTag: Text;
   private readonly wobbleIcon: Sprite;
   private wobbleDrawn = false;
   private readonly helperTimers = new Map<number, Text>();
@@ -116,7 +117,9 @@ export class WorldView {
       ...this.docks.map((d) => d.node),
       ...this.trucks.flatMap((t) => [t.node, t.worker.node, t.worker.front, t.held]),
     ]);
-    this.overlay.addChild(this.daylight.blooms, this.wrap, this.fx.layer, this.parcels.timers, this.wobble);
+    this.maxTag = label('MAX', 17, 0xfde047);
+    this.maxTag.visible = false;
+    this.overlay.addChild(this.daylight.blooms, this.wrap, this.fx.layer, this.parcels.timers, this.wobble, this.maxTag);
     if (this.courier) this.overlay.addChild(this.courier.card);
     this.wobbleIcon = new Sprite(atlas.get('icon_glass'));
     this.wobbleIcon.scale.set(0.34);
@@ -274,6 +277,7 @@ export class WorldView {
     this.fx.update(dt);
     this.drawWobble(time);
     this.drawWrap(time);
+    this.drawMax(time);
     this.drawHelperTimers();
     if (dt > 0) this.stepDust();
     this.fx.noText = this.cinematic;
@@ -306,6 +310,18 @@ export class WorldView {
     g.roundRect(x - W / 2 - 2, y - 5, W + 4, 11, 5).fill({ color: 0x1f2937, alpha: 0.9 });
     g.roundRect(x - W / 2, y - 3, W * Math.min(1, w), 7, 3).fill(color);
     this.wobbleIcon.position.set(x - W / 2 - 12, y);
+  }
+
+  /** "MAX" over a full stack: time to deliver. */
+  private drawMax(time: number): void {
+    const p = this.wh.player;
+    const on = p.stack.length > 0 && p.isFull() && !this.cinematic;
+    this.maxTag.visible = on;
+    if (!on) return;
+    const top = this.stackTop(p.id);
+    const wobbling = p.wobble > 0.01 && p.hasFragile();
+    this.maxTag.position.set(top.x, top.y - (wobbling ? 38 : 18) - Math.abs(Math.sin(time * 5)) * 3);
+    this.maxTag.scale.set(1 + Math.sin(time * 5) * 0.04);
   }
 
   /** Bubble wrap (rewarded): a see-through sheet with bubbles around the player's stack. */

@@ -34,6 +34,8 @@ export interface SaveData {
   settings: Settings;
   /** One-time flags: tutorial steps, intros seen. */
   flags: Record<string, boolean>;
+  /** Franchises opened (prestige): each raises all earnings for good. */
+  franchise: number;
 }
 
 export const defaultSettings = (): Settings => ({ sfx: true, music: true, lang: null });
@@ -84,5 +86,6 @@ export function migrate(raw: unknown): SaveData | null {
       lang: typeof s.lang === 'string' ? s.lang : null,
     },
     flags,
+    franchise: Math.max(0, Math.floor(num(raw.franchise))),
   };
 }

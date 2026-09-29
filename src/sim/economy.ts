@@ -200,3 +200,9 @@ export const BUBBLE_DURATION = 180;
 /** Offered right after a fragile parcel breaks. */
 export const BUBBLE_LIFETIME = 25;
 export const BUBBLE_COOLDOWN = 120;
+
+/** An XXL parcel is heavy: it takes this many places in a stack (instead of being carried alone). */
+export const XXL_SLOTS = 3;
+
+/** Every franchise opened raises all earnings by this share, for good (prestige). */
+export const FRANCHISE_BONUS = 0.5;

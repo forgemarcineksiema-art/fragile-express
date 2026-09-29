@@ -1,5 +1,9 @@
 // Carrier: anything that walks around with a stack of parcels (the player and every worker).
 import type { Parcel, Role } from './types.ts';
+import { XXL_SLOTS } from './economy.ts';
+
+/** Places a parcel takes in a stack. */
+export const slotsOf = (p: Parcel): number => (p.kind === 'xxl' ? XXL_SLOTS : 1);
 
 export class Carrier {
   readonly id: number;
@@ -58,17 +62,22 @@ export class Carrier {
     return false;
   }
 
-  /** Whether one more parcel of this kind fits. An XXL parcel is carried alone. */
-  canTake(p: Parcel): boolean {
-    if (this.stack.length === 0) return true;
-    if (p.kind === 'xxl' || this.hasXXL()) return false;
-    return this.stack.length < this.capacity;
+  /** Places the stack takes: an XXL parcel is heavy and counts as several. */
+  load(): number {
+    let n = 0;
+    for (const p of this.stack) n += slotsOf(p);
+    return n;
   }
 
-  /** Room left for ordinary parcels. */
+  /** Whether one more parcel of this kind fits (an empty carrier can always lift one). */
+  canTake(p: Parcel): boolean {
+    if (this.stack.length === 0) return true;
+    return this.load() + slotsOf(p) <= this.capacity;
+  }
+
+  /** Places left for ordinary parcels. */
   room(): number {
-    if (this.hasXXL()) return 0;
-    return Math.max(0, this.capacity - this.stack.length);
+    return Math.max(0, this.capacity - this.load());
   }
 
   isFull(): boolean {

@@ -154,13 +154,14 @@ export class PlayerBot {
         const front = t.belt.front();
         if (front && !c.canTake(front) && c.stack.length > 0) return true;
         // Leave with a partial stack when the belt runs dry.
-        return c.isFull() || c.hasXXL() || (c.stack.length > 0 && this.idle > 1.2 && t.belt.items.length === 0) || (c.stack.length > 0 && this.idle > 2.5);
+        return c.isFull() || (c.stack.length > 0 && this.idle > 1.2 && t.belt.items.length === 0) || (c.stack.length > 0 && this.idle > 2.5);
       }
       case 'shelfIn':
         return c.count((p) => !p.sorted && p.district === t.shelf.district) === 0;
       case 'shelfOut': {
         const have = c.count((p) => p.sorted && p.district === t.shelf.district);
-        if (t.shelf.items.length > 0 && have < t.want && !c.isFull()) this.idle = 0;
+        const top = t.shelf.items[t.shelf.items.length - 1];
+        if (top && have < t.want && c.canTake(top)) this.idle = 0;
         return have >= t.want || c.isFull() || this.idle > 0.6;
       }
       case 'dock': {

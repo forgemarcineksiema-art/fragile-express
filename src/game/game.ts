@@ -6,7 +6,8 @@ import { Sound, type SfxName } from '../core/audio.ts';
 import { detectLanguage, setLanguage, t } from '../core/i18n.ts';
 import { readJson, writeJson } from '../core/storage.ts';
 import { Poki, type RewardedSize } from '../poki/poki.ts';
-import { FIRST_LOCATION, getLocation, LOCATIONS } from '../sim/locations.ts';
+import { FRANCHISE_BONUS } from '../sim/economy.ts';
+import { FIRST_LOCATION, getLocation, locationFor, LOCATIONS } from '../sim/locations.ts';
 import { offlineEarnings } from '../sim/offline.ts';
 import { defaultSettings, migrate, SAVE_KEY, SAVE_VERSION, type SaveData } from '../sim/save.ts';
 import type { SimEvent } from '../sim/types.ts';
@@ -107,7 +108,7 @@ export class Game {
     this.app.stage.addChild(this.vignette, this.screenLayer);
     const locId = LOCATIONS[this.data.current.loc] ? this.data.current.loc : FIRST_LOCATION;
     const hasSave = this.data.t > 0;
-    this.enterLocation(new Warehouse(getLocation(locId), hasSave ? this.data.current : null));
+    this.enterLocation(new Warehouse(locationFor(locId, this.data.franchise), hasSave ? this.data.current : null));
 
     this.camera.resize(this.app.screen.width, this.app.screen.height);
     this.camera.snap(this.wh.player.x, this.wh.player.y);
@@ -152,6 +153,7 @@ export class Game {
       current: new Warehouse(getLocation(FIRST_LOCATION), null, { noAds: true }).toSave(),
       settings: defaultSettings(),
       flags: {},
+      franchise: 0,
     };
   }
 
@@ -197,7 +199,11 @@ export class Game {
     this.state = 'screen';
     Poki.gameplayStop();
     this.writeSave();
-    const next = this.wh.loc.next ? LOCATIONS[this.wh.loc.next] : undefined;
+    const next = this.wh.loc.next ? locationFor(this.wh.loc.next, this.data.franchise) : undefined;
+    if (!next && this.wh.padBought('franchise')) {
+      await this.franchiseFlow();
+      return;
+    }
     if (!next) {
       await this.ui.showMessage(t('ui.newLocation'), t('ui.comingSoon'), t('ui.continue'));
       await this.maybeCommercial();
@@ -219,6 +225,22 @@ export class Game {
     this.enterLocation(wh);
     this.writeSave();
     this.ui.toast(t(next.name), t('ui.newLocationText', { mult: next.multiplier }));
+    this.state = 'play';
+  }
+
+  /** Prestige: a new franchise starts over at the first location with higher earnings for good. */
+  private async franchiseFlow(): Promise<void> {
+    const n = this.data.franchise + 1;
+    const mult = 1 + FRANCHISE_BONUS * n;
+    Sound.play('unlock');
+    await this.ui.showMessage(t('franchise.title'), t('franchise.text', { mult: `×${mult.toFixed(1).replace(/\.0$/, '')}` }), t('franchise.go'));
+    await this.maybeCommercial();
+    this.data.franchise = n;
+    const first = locationFor(FIRST_LOCATION, n);
+    const wh = new Warehouse(first, null);
+    this.enterLocation(wh);
+    this.writeSave();
+    this.ui.toast(`${t(first.name)} ★${n}`, t('franchise.text2', { mult: `×${mult.toFixed(1).replace(/\.0$/, '')}` }));
     this.state = 'play';
   }
 
@@ -438,12 +460,12 @@ export class Game {
         case 'van2':
           return t('pad.van2');
         default:
-          return t('pad.move');
+          return p.id === 'franchise' ? t('pad.franchise') : t('pad.move');
       }
     };
     const left = next ? Math.ceil(wh.padCost(next) - next.paid) : 0;
     this.ui.setGoal({
-      name: t(wh.loc.name),
+      name: this.data.franchise > 0 ? `${t(wh.loc.name)} ★${this.data.franchise}` : t(wh.loc.name),
       done,
       total: miles.length,
       next: next ? { label: labelOf(next), price: left, affordable: wh.coins >= left } : null,

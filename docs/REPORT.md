@@ -246,3 +246,27 @@ Przegląd całej gry w 16:9 i poprawki tego, co najbardziej odstawało:
   zbieracza), regał pełny (bez ładowacza), taśma pełna (bez sortowacza). Każda pokazuje się do 7 s i
   potem odpoczywa 25 s.
 - Na wąskich ekranach podpowiedzi i komunikaty są pod kartą celu, a nie na liczniku monet.
+
+## Dziewiąta runda: reklamy w chwili potrzeby, naturalne pauzy i sama gra
+
+Reklamy (zgodnie z zasadami Poki: nagroda tylko z wyboru gracza, przerwy tylko w naturalnych pauzach):
+- **Paczka gotówki**: gdy gracz stoi na polu, do którego brakuje mu ponad połowy ceny (tam, gdzie nie
+  działa „Kup teraz”), obok pojawia się paczka gotówki za reklamę: 40% ceny; najwyżej raz na 150 s.
+- **Folia bąbelkowa**: oferowana tuż po stłuczce; przez 3 minuty kruche paczki gracza się nie chwieją.
+  Na stosie widać przezroczystą folię z bąbelkami, w HUD odliczanie.
+- **Naturalne pauzy**: krótki ekran świętowania po nowej dzielnicy i gdy lokacja pierwszy raz działa sama
+  (nigdy w samouczku), po pokazie kamery; przerwa reklamowa przy „Kontynuuj”.
+- Naprawiony błąd: kontener gry dało się przewinąć (ukryta baza joysticka wystawała poza niego), przez co
+  po kliknięciu i reklamie cały obraz z HUD przesuwał się w górę. Teraz `overflow: clip` i korekta co klatkę.
+
+Sama gra (nowe narzędzie `tools/playtest-stats.ts` mierzy, na co bot-gracz traci czas):
+- **XXL nie blokuje już taśmy ani regałów.** Stara zasada „XXL tylko sama” przy kolejce na taśmie i
+  stosie na regale zatrzymywała gracza z czymkolwiek w rękach: w Hubie 31% czasu bezczynności, średnio 1,4
+  paczki na kurs. Teraz XXL jest ciężka i zajmuje 3 miejsca w stosie. Bezczynność w Hubie spadła do 5%,
+  dostarczonych paczek 2,3× więcej, automatyzacja w 8 min zamiast 13,5.
+- **„MAX” nad pełnym stosem** – standard gatunku, wiadomo, kiedy iść dostarczać.
+- **Koniec gry nie jest ślepym zaułkiem.** Po ok. 21 min w Hubie nie było już nic do kupienia, a monety
+  rosły bez celu. Teraz na końcu Hubu jest **franczyza** (prestiż): zaczynasz od nowa w Poczcie, a wszystkie
+  zarobki są na stałe ×1,5 (×2, ×2,5…). Pierwsze przejście trwa ok. 66 min (Poczta 20, Sortownia 19,
+  Hub 26,5), kolejne szybciej; gwiazdka franczyzy na karcie celu.
+- 57 testów; paczka ok. 800 KB.

@@ -152,9 +152,9 @@ export class Worker {
     this.stall += dt;
     switch (job.kind) {
       case 'belt': {
-        // Carry an XXL parcel alone; otherwise fill up, leaving early if the belt runs dry.
+        // Fill up (an XXL parcel takes several places), leaving early if the belt runs dry.
         if (wh.pickFromBelt(c, job.belt)) this.stall = 0;
-        const done = c.isFull() || c.hasXXL() || (c.stack.length > 0 && this.stall > 1.2);
+        const done = c.isFull() || (c.stack.length > 0 && this.stall > 1.2);
         const front = job.belt.front();
         const blocked = front !== null && !c.canTake(front) && c.stack.length > 0;
         if (done || blocked) this.afterPick(wh);
