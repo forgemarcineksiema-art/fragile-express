@@ -5,7 +5,8 @@ import { PARCEL, PARCEL_XXL } from './art.ts';
 import type { Atlas } from './atlas.ts';
 import { Fx } from './fx.ts';
 import { label, formatTime, setText } from './text.ts';
-import { Background, WORLD_MARGIN } from './views/background.ts';
+import { Background } from './views/background.ts';
+import { WORLD_MARGIN } from './views/outdoor.ts';
 import { CharacterView, HANDS_Z } from './views/character.ts';
 import { AdPadView, PadTooltip, PadView } from './views/pads.ts';
 import { ParcelLayer } from './views/parcels.ts';
@@ -54,6 +55,7 @@ export class WorldView {
 
     this.bg = new Background(wh, atlas);
     this.floor.addChild(this.bg.ground);
+    this.bg.outdoor.attach(this.entities);
 
     const tex = beltTexture(renderer);
     this.belts = wh.belts.map((b) => {
@@ -229,6 +231,7 @@ export class WorldView {
       v.update(lerp(c.px, c.x, alpha), lerp(c.py, c.y, alpha), dt, time);
     }
     this.bg.update();
+    this.bg.outdoor.update(dt);
     for (const b of this.belts) b.update(dt);
     for (const t of this.trucks) t.update(dt, time, (x, y) => this.fx.puff(x, y));
     for (const s of this.shelves) s.update(dt);

@@ -1,4 +1,5 @@
-// Static scenery: street, building shell, floor, office carpet and the painted zone markings.
+// Static scenery: building shell, floor, office carpet and the painted zone markings (the
+// surroundings are in outdoor.ts).
 import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { t } from '../../core/i18n.ts';
 import type { Rect } from '../../core/math.ts';
@@ -6,11 +7,11 @@ import { BACK_WALL, WALL, type Layout, type LocationJson } from '../../sim/layou
 import type { Warehouse } from '../../sim/warehouse.ts';
 import { drawGlass } from '../art.ts';
 import type { Atlas } from '../atlas.ts';
-import { DISTRICT_COLORS, INK, THEMES, WHITE, shade, type Theme } from '../palette.ts';
+import { DISTRICT_COLORS, INK, THEMES, WHITE, type Theme } from '../palette.ts';
 import { FONT } from '../text.ts';
+import { Outdoor } from './outdoor.ts';
 import { drawHatch } from './props.ts';
 
-export const WORLD_MARGIN = { left: 250, right: 330, top: 170, bottom: 90 };
 const WALL_H = 96;
 
 function dashedRect(g: Graphics, r: Rect, color: number, width = 3, dash = 10, gap = 7, alpha = 1): void {
@@ -120,6 +121,8 @@ export class Background {
   /** Zone markings per district, shown once the district is built. */
   readonly districtZones: Graphics[] = [];
   private readonly theme: Theme;
+  /** Street, lots and yard around the building. */
+  readonly outdoor: Outdoor;
 
   constructor(
     private readonly wh: Warehouse,
@@ -127,56 +130,12 @@ export class Background {
   ) {
     this.theme = THEMES[wh.loc.theme] ?? THEMES.post!;
     const L = wh.layout;
-    this.drawOutside(L);
+    this.outdoor = new Outdoor(L, this.theme);
+    this.ground.addChild(this.outdoor.ground);
     this.drawFloor(L);
     this.drawOffice(L);
     this.drawZones(L);
     this.drawWalls(L, wh.loc);
-  }
-
-  private drawOutside(L: Layout): void {
-    const th = this.theme;
-    const g = new Graphics();
-    const m = WORLD_MARGIN;
-    const X0 = -m.left - 200;
-    const Y0 = -m.top - 200;
-    const FW = L.w + m.left + m.right + 400;
-    const FH = L.h + m.top + m.bottom + 400;
-    g.rect(X0, Y0, FW, FH).fill(th.grass);
-    // Mown stripes on the lawn
-    for (let y = Y0; y < Y0 + FH; y += 48) g.rect(X0, y, FW, 24).fill({ color: WHITE, alpha: 0.05 });
-    // Asphalt: yard with parking bays east of the building, truck lanes west of it.
-    const lane = th.outsideLine;
-    g.rect(L.w - 10, Y0, m.right + 210, FH).fill(th.outside);
-    for (const b of L.belts) g.rect(X0, b.y - 78, -X0 + 10, 156).fill(th.outside);
-    // Pavement around the building
-    g.rect(-14, -14 - 100, L.w + 28, L.h + 128 + 100).fill(0xd6d3d1);
-    for (const d of L.docks) {
-      g.rect(L.w + 8, d.y - 50, 190, 3).fill({ color: lane, alpha: 0.8 });
-      g.rect(L.w + 8, d.y + 48, 190, 3).fill({ color: lane, alpha: 0.8 });
-    }
-    for (let y = Y0; y < Y0 + FH; y += 60) g.rect(L.w + 262, y, 6, 30).fill({ color: lane, alpha: 0.7 });
-    for (const b of L.belts) {
-      g.rect(X0, b.y - 62, -X0 - WALL, 3).fill({ color: lane, alpha: 0.7 });
-      g.rect(X0, b.y + 62, -X0 - WALL, 3).fill({ color: lane, alpha: 0.7 });
-    }
-    // Trees and bushes on the grass
-    const tree = (x: number, y: number, r: number): void => {
-      g.ellipse(x + 4, y + r * 0.7, r * 0.9, r * 0.35).fill({ color: 0x000000, alpha: 0.18 });
-      g.circle(x, y, r).fill(shade(th.grass, 0.72));
-      g.circle(x - r * 0.3, y - r * 0.3, r * 0.55).fill(shade(th.grass, 0.85));
-    };
-    const onAsphalt = (x: number, y: number): boolean =>
-      x > L.w - 40 || (x < 10 && L.belts.some((b) => Math.abs(y - b.y) < 110)) || (x > -30 && x < L.w + 30 && y > -130 && y < L.h + 30);
-    let seed = 7;
-    const rnd = (): number => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    for (let i = 0; i < 90; i++) {
-      const x = X0 + rnd() * FW;
-      const y = Y0 + rnd() * FH;
-      if (onAsphalt(x, y)) continue;
-      tree(x, y, 16 + rnd() * 16);
-    }
-    this.ground.addChild(g);
   }
 
   private drawFloor(L: Layout): void {
