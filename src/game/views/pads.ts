@@ -139,7 +139,14 @@ export class PadView {
     }
     const wh = this.wh;
     const cost = wh.padCost(p);
-    setText(this.price, formatCoins(Math.ceil(cost - p.paid)));
+    const price = formatCoins(Math.ceil(cost - p.paid));
+    if (price !== this.price.text) {
+      setText(this.price, price);
+      // Keep long prices (and the larger phone labels) inside the pad.
+      this.price.scale.set(1);
+      const room = PAD_SIZE / 2 + 9;
+      if (this.price.width > room) this.price.scale.set(room / this.price.width);
+    }
     const lvl = wh.padLevel(p);
     if (lvl !== this.lastLevel) {
       this.lastLevel = lvl;

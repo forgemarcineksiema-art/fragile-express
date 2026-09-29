@@ -452,3 +452,10 @@ select.lang {
   font-size: calc(var(--u) * 1.2);
   color: #78716c;
 }
+
+/* Touch devices: Poki shows its own button in the top-left corner, keep the coin counter clear of it. */
+@media (pointer: coarse) {
+  .hud-coins {
+    left: calc(var(--u) * 1 + 66px);
+  }
+}

@@ -3,7 +3,7 @@
 import { Container, Graphics } from 'pixi.js';
 import { CAR, CAR_COLORS, carContext } from '../art-outdoor.ts';
 
-type Facing = 'E' | 'W' | 'N' | 'S';
+export type Facing = 'E' | 'W' | 'N' | 'S';
 type View = 'side' | 'nose' | 'tail';
 
 interface Space {
@@ -13,12 +13,14 @@ interface Space {
 }
 
 export interface Lot {
+  /** 'ns': cars park north-south off an east-west aisle; 'ew': cars park east-west, nose to the east. */
+  axis: 'ns' | 'ew';
   spaces: Space[];
-  /** y of the aisle the spaces open onto. */
+  /** y of the aisle the spaces open onto ('ns'), or x of the aisle west of the spaces ('ew'). */
   aisle: number;
-  /** -1: the aisle is north of the spaces, +1: south of them. */
+  /** 'ns' lots: -1 when the aisle is north of the spaces, +1 south of them. */
   side: -1 | 1;
-  /** Off-screen x where cars come from and go to (east). */
+  /** Off-screen x where cars come from and go to (east for 'ns' lots, west for 'ew'). */
   exitX: number;
 }
 
@@ -48,27 +50,28 @@ interface Car {
 
 const viewOf = (f: Facing): View => (f === 'E' || f === 'W' ? 'side' : f === 'S' ? 'nose' : 'tail');
 /** Direction a car faces when it has driven nose-first into a space of this lot. */
-const inward = (lot: Lot): Facing => (lot.side < 0 ? 'S' : 'N');
+const inward = (lot: Lot): Facing => (lot.axis === 'ew' ? 'E' : lot.side < 0 ? 'S' : 'N');
 
 export class Parking {
   readonly lots: Lot[] = [];
   private readonly cars: Car[] = [];
   private readonly initial: { lot: Lot; space: Space; face: Facing; color: number }[] = [];
+
   private layer: Container | null = null;
   private timer = 2;
   private tint = 0xffffff;
 
-  addLot(aisle: number, side: -1 | 1, exitX: number): Lot {
-    const lot: Lot = { spaces: [], aisle, side, exitX };
+  addLot(aisle: number, side: -1 | 1, exitX: number, axis: 'ns' | 'ew' = 'ns'): Lot {
+    const lot: Lot = { axis, spaces: [], aisle, side, exitX };
     this.lots.push(lot);
     return lot;
   }
 
-  /** Adds a space; `parked` puts a car in it from the start ('nose' faces south, 'tail' north). */
-  addSpace(lot: Lot, x: number, y: number, parked: 'nose' | 'tail' | null, color: number): void {
+  /** Adds a space; `parked` puts a car in it from the start, facing that way. */
+  addSpace(lot: Lot, x: number, y: number, parked: Facing | null, color: number): void {
     const space: Space = { x, y, taken: parked !== null };
     lot.spaces.push(space);
-    if (parked) this.initial.push({ lot, space, face: parked === 'nose' ? 'S' : 'N', color });
+    if (parked) this.initial.push({ lot, space, face: parked, color });
   }
 
   attach(layer: Container): void {
@@ -127,7 +130,18 @@ export class Parking {
     if (free.length === 0) return false;
     const space = free[Math.floor(Math.random() * free.length)]!;
     space.taken = true;
-    const car = this.makeCar(lot, space, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]!, lot.exitX, lot.aisle, 'W');
+    const color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]!;
+    if (lot.axis === 'ew') {
+      // In from the west access road, straight into the space.
+      const car = this.makeCar(lot, space, color, lot.exitX, space.y, 'E');
+      car.path = [
+        { x: lot.aisle, y: space.y, face: 'E', speed: 115 },
+        { x: space.x, y: space.y, face: 'E', speed: 42 },
+      ];
+      car.v = 115;
+      return true;
+    }
+    const car = this.makeCar(lot, space, color, lot.exitX, lot.aisle, 'W');
     const into = inward(lot);
     car.path = [
       { x: space.x + 30, y: lot.aisle, face: 'W', speed: 115 },
@@ -140,8 +154,29 @@ export class Parking {
 
   private leave(car: Car): void {
     const lot = car.lot;
-    const out = lot.aisle - lot.side * 16;
     car.leaving = true;
+    if (lot.axis === 'ew') {
+      const y = car.space.y;
+      if (car.face === 'W') {
+        // Backed in earlier: drive straight out.
+        car.path = [
+          { x: lot.aisle, y, face: 'W', speed: 45 },
+          { x: lot.exitX, y, face: 'W', speed: 120 },
+        ];
+      } else {
+        // Reverse out into the aisle, swing round and leave to the west.
+        const last = lot.spaces[lot.spaces.length - 1]!;
+        const dy = car.space === last ? -24 : 24;
+        car.path = [
+          { x: lot.aisle + 12, y, face: 'E', speed: 30 },
+          { x: lot.aisle - 12, y: y + dy, face: dy > 0 ? 'S' : 'N', speed: 26 },
+          { x: lot.exitX, y: y + dy, face: 'W', speed: 120 },
+        ];
+      }
+      car.space.taken = false;
+      return;
+    }
+    const out = lot.aisle - lot.side * 16;
     // Nose-in cars reverse out keeping their facing; cars that backed in drive straight out.
     car.path = [
       { x: car.space.x, y: out, face: car.face, speed: car.face === inward(lot) ? 30 : 40 },

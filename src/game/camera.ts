@@ -14,10 +14,19 @@ interface Reveal {
   fromY: number;
 }
 
+/** Zoom that shows about the same world area on any screen (narrow screens keep a minimum width). */
+export function baseZoomFor(w: number, h: number): number {
+  const z = Math.sqrt((w * h) / VIEW_AREA);
+  return w / z < MIN_VIEW_W ? w / MIN_VIEW_W : z;
+}
+
 export class Camera {
   x = 0;
   y = 0;
   zoom = 1;
+  /** Zoom for the screen size; `zoom` pulls back from it while a tall stack is carried. */
+  private baseZoom = 1;
+  private zoomMul = 1;
   viewW = 1031;
   viewH = 580;
   private reveal: Reveal | null = null;
@@ -33,9 +42,9 @@ export class Camera {
   resize(w: number, h: number): void {
     this.viewW = w;
     this.viewH = h;
-    let z = Math.sqrt((w * h) / VIEW_AREA);
-    if (w / z < MIN_VIEW_W) z = w / MIN_VIEW_W;
-    this.zoom = this.fixedZoom ?? z;
+    const z = baseZoomFor(w, h);
+    this.baseZoom = z;
+    this.zoom = this.fixedZoom ?? z * this.zoomMul;
   }
 
   get revealing(): boolean {
@@ -61,8 +70,22 @@ export class Camera {
 
   /** Development override: keep the camera on a point instead of the player. */
   pin: { x: number; y: number } | null = null;
+  /** How far above the player the camera currently looks (tall stacks). */
+  private lift = 0;
 
-  update(dt: number, fx: number, fy: number, vx: number, vy: number): void {
+  /**
+   * Follows (fx, fy). `stackH` is how far the carried stack reaches above the feet: a tall tower
+   * makes the camera look up and pull back so the top (and the wobble bar) stays on screen.
+   */
+  update(dt: number, fx: number, fy: number, vx: number, vy: number, stackH = 0): void {
+    if (this.fixedZoom === null) {
+      const viewH = this.viewH / this.baseZoom;
+      const fit = clamp((viewH * 0.9) / (stackH + 190), 0.68, 1);
+      this.zoomMul += (fit - this.zoomMul) * damp(2.2, dt);
+      this.zoom = this.baseZoom * this.zoomMul;
+    }
+    this.lift += (Math.max(0, stackH * 0.5 - 60) - this.lift) * damp(3, dt);
+    fy -= this.lift;
     if (this.pin) {
       // Pinned shots frame exactly (the capture may be narrower than the screen).
       this.x = this.pin.x;

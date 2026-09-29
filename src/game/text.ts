@@ -3,7 +3,15 @@ import { Text, type TextStyleOptions } from 'pixi.js';
 
 export const FONT = '"Trebuchet MS", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+let labelScale = 1;
+
+/** Phones show the world zoomed out, so world labels are created larger there to stay readable. */
+export function setLabelScale(k: number): void {
+  labelScale = k;
+}
+
 export function label(text: string, size: number, fill: number | string = 0xffffff, extra: Partial<TextStyleOptions> = {}): Text {
+  size *= labelScale;
   const tx = new Text({
     text,
     style: {

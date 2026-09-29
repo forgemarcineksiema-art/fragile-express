@@ -13,11 +13,11 @@ import type { SimEvent } from '../sim/types.ts';
 import { Warehouse } from '../sim/warehouse.ts';
 import { UI } from '../ui/ui.ts';
 import type { Atlas } from './atlas.ts';
-import { Camera } from './camera.ts';
+import { Camera, baseZoomFor } from './camera.ts';
 import { Guide } from './guide.ts';
 import { Input } from './input.ts';
 import { DISTRICT_COLORS } from './palette.ts';
-import { formatCoins } from './text.ts';
+import { formatCoins, setLabelScale } from './text.ts';
 import { buildAtlas } from './textures.ts';
 import { WorldView } from './world.ts';
 
@@ -173,10 +173,11 @@ export class Game {
       this.guide.edge.destroy();
     }
     this.wh = wh;
+    setLabelScale(Math.max(1, Math.min(1.45, 0.95 / baseZoomFor(this.app.screen.width, this.app.screen.height))));
     this.world = new WorldView(wh, this.atlas, this.app.renderer);
-    this.world.onVanEvent = (ev) => {
-      if (ev === 'reverse') Sound.play('reverse');
-      else if (ev === 'stop') Sound.play('brake');
+    this.world.onVanEvent = (ev, x, y) => {
+      if (ev === 'reverse') this.sfxAt('reverse', x, y);
+      else if (ev === 'stop') this.sfxAt('brake', x, y);
     };
     this.app.stage.addChildAt(this.world.root, 0);
     const b = this.world.bounds;
@@ -352,10 +353,14 @@ export class Game {
     const vy = dt > 0 ? (py - this.lastPlayerY) / dt : 0;
     this.lastPlayerX = px;
     this.lastPlayerY = py;
-    this.camera.update(dt, px, py - 30, vx, vy);
+    const stackH = p.stack.length > 0 ? p.y - this.world.stackTop(p.id).y : 0;
+    this.camera.update(dt, px, py - 30, vx, vy, stackH);
     this.camera.apply(this.world.root, dt);
     const hint = this.guide.update(dt, wh, this.world, this.camera);
     this.ui.setHint(this.state === 'play' ? hint : null);
+    if (this.state === 'play') this.footsteps();
+    Sound.setNight(this.world.daylight.lamps);
+    Sound.duck(this.state !== 'play');
     this.ui.setCoins(wh.coins);
     this.ui.update(dt);
     this.coinTrail.update(dt);
@@ -376,6 +381,31 @@ export class Game {
     Sound.play(name, pitch);
   }
 
+  /** A sound from a place in the world: panned by where it is on screen, fading out off-screen. */
+  private sfxAt(name: SfxName, x: number, y: number, pitch = 0, vol = 1): void {
+    const cam = this.camera;
+    const hw = cam.viewW / cam.zoom / 2;
+    const hh = cam.viewH / cam.zoom / 2;
+    const dx = (x - cam.x) / hw;
+    const dy = (y - cam.y) / hh;
+    const d = Math.hypot(dx, dy);
+    const fade = d <= 1 ? 1 : Math.max(0, 1 - (d - 1) / 0.7);
+    Sound.play(name, pitch, vol * fade, Math.max(-1, Math.min(1, dx)) * 0.6);
+  }
+
+  private lastStep = 0;
+
+  /** Footsteps of the player, one per foot fall. */
+  private footsteps(): void {
+    const p = this.wh.player;
+    const stride = 9.5 * Math.PI;
+    const n = Math.floor(p.walked / stride);
+    if (n !== this.lastStep) {
+      if (p.moving && n > this.lastStep) Sound.play('step', n % 2, p.running ? 0.9 : 0.55);
+      this.lastStep = n;
+    }
+  }
+
   private handleEvents(events: SimEvent[]): void {
     const wh = this.wh;
     const world = this.world;
@@ -387,12 +417,20 @@ export class Game {
           break;
         case 'drop':
           if (isPlayer(e.carrier)) this.sfx('drop', e.to === 'van' ? 3 : 0);
+          else {
+            const c = world.chars.get(e.carrier);
+            if (c) this.sfxAt('drop', c.x, c.y, e.to === 'van' ? 3 : 0, 0.35);
+          }
           break;
         case 'stamp':
           if (isPlayer(e.carrier)) this.sfx('stamp');
           break;
         case 'break': {
-          this.sfx('glass');
+          if (isPlayer(e.carrier)) this.sfx('glass');
+          else {
+            const c = world.chars.get(e.carrier);
+            if (c) this.sfxAt('glass', c.x, c.y);
+          }
           const top = world.stackTop(e.carrier);
           world.fx.shatter(top.x, top.y + 60, 60, DISTRICT_COLORS[e.district]!);
           world.fx.float(top.x, top.y - 10, `💔 −${formatCoins(15 * wh.loc.multiplier)}`, 0xfca5a5, 20);
@@ -405,8 +443,9 @@ export class Game {
           break;
         case 'vanDepart': {
           const dock = wh.docks.find((d) => d.id === e.dock)!;
-          this.sfx('van');
-          this.sfx('horn');
+          this.sfxAt('van', dock.geom.bay.x, dock.geom.bay.y);
+          // A toot now and then, not every time a van leaves.
+          if (Math.random() < 0.3) this.sfxAt('horn', dock.geom.bay.x, dock.geom.bay.y, 0, 0.8);
           world.fx.dust(dock.geom.bay.x - 60, dock.geom.bay.y + 30, 8);
           if (e.dock === 'dock0') this.guide.vanLeft = true;
           break;
@@ -418,10 +457,10 @@ export class Game {
           const door = world.docks[idx]!.doorPoint;
           const n = Math.min(16, Math.max(5, Math.round(e.amount / (5 * wh.loc.multiplier))));
           const view = world.piles[idx]!;
-          world.fx.coinRain(door.x + 6, door.y + 4, 34, pile.x, pile.y, n, () => view.land(e.amount / n), () => this.sfx('clink', Math.random() * 4));
+          world.fx.coinRain(door.x + 6, door.y + 4, 34, pile.x, pile.y, n, () => view.land(e.amount / n), () => this.sfxAt('clink', pile.x, pile.y, Math.random() * 4));
           const turbo = wh.turboActive();
           world.fx.payout(pile.x, pile.y - 46, `+${formatCoins(e.amount)}${turbo ? ' ×2' : ''}`, turbo ? 0xc4b5fd : 0xfde047);
-          this.sfx('cash');
+          this.sfxAt('cash', pile.x, pile.y);
           break;
         }
         case 'collect': {
@@ -447,9 +486,9 @@ export class Game {
           const s = wh.layout.safe.stand;
           const c = world.chars.get(e.carrier);
           const b = wh.layout.safe.body;
-          if (c) world.fx.coinRain(c.x, c.y, 30, b.x + b.w / 2, b.y + 6, 6, () => world.desk.pop(), () => this.sfx('clink', 2));
+          if (c) world.fx.coinRain(c.x, c.y, 30, b.x + b.w / 2, b.y + 6, 6, () => world.desk.pop(), () => this.sfxAt('clink', s.x, s.y, 2));
           world.fx.payout(s.x, s.y - 78, `+${formatCoins(e.amount)}`);
-          this.sfx('cash');
+          this.sfxAt('cash', s.x, s.y);
           break;
         }
         case 'purchase': {

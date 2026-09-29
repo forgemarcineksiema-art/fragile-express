@@ -19,7 +19,7 @@ import {
 } from '../art-outdoor.ts';
 import { WHITE, shade, type Theme } from '../palette.ts';
 import { FONT } from '../text.ts';
-import { Parking } from './parking.ts';
+import { Parking, type Facing } from './parking.ts';
 
 /** How far past the building the camera may look. */
 export const WORLD_MARGIN = { left: 250, right: 400, top: 190, bottom: 230 };
@@ -277,14 +277,18 @@ export class Outdoor {
 
     // Lots west of the building
     for (const r of st.west) {
-      pave(r.x, r.y, r.w, r.h, asphalt);
+      // The lot runs out to an access road in the west, where its cars come and go.
+      pave(st.x0, r.y, r.x + r.w - st.x0, r.h, asphalt);
       pave(r.x, r.y - 30, 100, r.h + 60, asphalt);
+      const lot = this.parking.addLot(-190, -1, st.x0 + 90, 'ew');
       for (let y = r.y + 6; y + ROW <= r.y + r.h - 4; y += ROW) {
         this.spaceLines(g, -136, y, 122, ROW, 'h');
-        if (this.rnd() < 0.62) statics.push({ kind: 'side', x: -78, y: y + ROW / 2, color: this.carColor(), flip: this.rnd() < 0.35 });
+        const parked = this.rnd() < 0.62 ? (this.rnd() < 0.65 ? 'E' : 'W') : null;
+        this.parking.addSpace(lot, -76, y + ROW / 2, parked, this.carColor());
       }
-      statics.push({ kind: 'lamp', x: -150, y: r.y + r.h - 8, flip: true });
-      statics.push({ kind: 'sign', x: -146, y: r.y + 24 });
+      // Lamp on the apron by the wall, sign on the verge: both clear of the cars' way.
+      this.entityThings.push({ kind: 'lamp', x: -6, y: r.y + r.h / 2 + 10 });
+      statics.push({ kind: 'sign', x: -230, y: r.y - 10 });
     }
 
     // Loading yard east of the building
@@ -402,10 +406,10 @@ export class Outdoor {
     }
   }
 
-  /** Whether a space starts occupied, and which way the car faces. */
-  private parkChoice(chance: number): 'nose' | 'tail' | null {
+  /** Whether a north-south space starts occupied, and which way the car faces. */
+  private parkChoice(chance: number): Facing | null {
     if (this.rnd() >= chance) return null;
-    return this.rnd() < 0.6 ? 'nose' : 'tail';
+    return this.rnd() < 0.6 ? 'S' : 'N';
   }
 
   private spawn(lane: number, at: number | null): void {
