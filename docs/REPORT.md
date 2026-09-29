@@ -188,3 +188,26 @@ boku zrobiony z przodu tułowia i doklejonej głowy z profilu, kończyny bez kol
   monety przed sobą.
 - Narzędzie deweloperskie `lab.html` (tylko w trybie dev): wszystkie role, kierunki i fazy kroku.
 - Koszt: ok. 2,3 ms na klatkę w Hubie, paczka 782 KB. Miniatury nagrane od nowa.
+
+## Szósta runda: przegląd jako gracz i wydawca
+
+Przegląd całej gry w 16:9 i poprawki tego, co najbardziej odstawało:
+
+- **Paczki:** kartony z tektury falistej, większe (podstawa 30×14 zamiast 26×12, wysokość bez zmian,
+  żeby wieże nie urosły). Dzielnica na szerokiej taśmie na wieku i dużej naklejce z przodu; kruche mają
+  białą taśmę w czerwone pasy i etykietę z kieliszkiem, ekspresowe żółto-czarną taśmę i piorun,
+  posortowane etykietę z kodem kreskowym na wieku. Sloty regału i palety rozstawione pod nowe kartony.
+- **Magazyn:** posadzka z wylewanego betonu w dużych płytach z nacięciami dylatacyjnymi, plamami i
+  śladami opon wózków; tylna ściana z paneli ze stalowymi słupami i lampami, cokołem i oprawionymi
+  oknami; głowice słupów na ścianach bocznych; stalowe regały sortownicze w kolorze dzielnicy; lada
+  obsługi z kasą; wykładzina z płytek w biurze.
+- **Pora dnia** (8 minut gry na dobę): rano, dzień, złota godzina, zachód, noc, świt. Noc przyciemnia
+  otoczenie (ziemia przez mieszanie multiply, auta, vany, ciężarówki i latarnie przez tint), magazyn
+  zostaje oświetlony; świecą latarnie i lampy na słupach, jadące auta mają światła, okna pokazują niebo.
+  Miniatury nagrywane są w południe.
+- **Parkingi:** auta wjeżdżają alejką, skręcają na wolne miejsce i parkują; po jakimś czasie wycofują
+  (albo wyjeżdżają przodem) i odjeżdżają.
+- Powracający gracz ma od razu paczki na taśmie; komunikaty o kamieniach milowych są pod paskiem u góry,
+  a nie na środku ekranu.
+- Koszt: ok. 2,1–2,8 ms na klatkę w Hubie (statyczne podłoże we własnej grupie renderowania),
+  paczka 794 KB.
