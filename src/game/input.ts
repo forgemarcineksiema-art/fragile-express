@@ -1,4 +1,4 @@
-// Keyboard (WASD / arrows, Shift = careful walk) and a floating virtual joystick anywhere on the screen
+// Keyboard (WASD / arrows, Shift or C toggle = careful walk) and a floating virtual joystick anywhere on the screen
 // (small tilt = walk, full tilt = run). Mouse drag works as the joystick too.
 
 export interface MoveIntent {
@@ -14,6 +14,8 @@ const WALK_MAX = 0.62; // below this tilt the joystick walks carefully
 export class Input {
   private readonly keys = new Set<string>();
   private pointerId: number | null = null;
+  /** Careful walk switched on with C (instead of holding Shift). */
+  carefulLock = false;
   private ox = 0;
   private oy = 0;
   private cx = 0;
@@ -48,6 +50,11 @@ export class Input {
     if (e.repeat) return;
     if (k === 'Escape' || k === 'Space' || k === 'KeyP') {
       this.onPause?.();
+      return;
+    }
+    if (k === 'KeyC') {
+      // Careful walk as a toggle: nothing has to be held down.
+      this.carefulLock = !this.carefulLock;
       return;
     }
     this.keys.add(k);
@@ -135,7 +142,7 @@ export class Input {
     if (k.has('KeyD') || k.has('ArrowRight')) x += 1;
     if (k.has('KeyW') || k.has('ArrowUp')) y -= 1;
     if (k.has('KeyS') || k.has('ArrowDown')) y += 1;
-    const careful = k.has('ShiftLeft') || k.has('ShiftRight');
+    const careful = this.carefulLock || k.has('ShiftLeft') || k.has('ShiftRight');
     if (x === 0 && y === 0) return { x: 0, y: 0, careful };
     const len = Math.hypot(x, y);
     return { x: x / len, y: y / len, careful };

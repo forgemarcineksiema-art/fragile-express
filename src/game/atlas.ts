@@ -1,11 +1,22 @@
 // Builds one texture atlas from vector drawing callbacks, so every sprite shares a GPU texture and batches.
-import { Graphics, Rectangle, Texture, type Renderer, type Sprite } from 'pixi.js';
+import { CanvasSource, Graphics, Rectangle, Texture, type Renderer, type Sprite, type TextureSource } from 'pixi.js';
 
 /** Assigns a texture and its default anchor (Pixi only applies defaultAnchor in the Sprite constructor). */
 export function setTexture(sprite: Sprite, tex: Texture): void {
   sprite.texture = tex;
   const a = tex.defaultAnchor;
   if (a) sprite.anchor.set(a.x ?? 0, a.y ?? 0);
+}
+
+/**
+ * Renders a display object into a texture that survives WebGL context loss: a render texture lives
+ * only on the GPU and comes back blank, so its pixels are copied to a canvas the GPU can re-upload.
+ */
+export function bakeTexture(renderer: Renderer, target: Graphics, resolution: number, frame?: Rectangle): TextureSource {
+  const rt = renderer.generateTexture({ target, frame, resolution, antialias: true });
+  const canvas = renderer.extract.canvas({ target: rt }) as HTMLCanvasElement;
+  rt.destroy(true);
+  return new CanvasSource({ resource: canvas, resolution });
 }
 
 export interface AtlasEntry {
@@ -44,18 +55,13 @@ export class Atlas {
     const totalH = Math.ceil(y + rowH);
     const g = new Graphics();
     for (const c of cells) c.e.draw(g, c.x + c.e.ax, c.y + c.e.ay);
-    const rt = renderer.generateTexture({
-      target: g,
-      frame: new Rectangle(0, 0, MAX_W, totalH),
-      resolution,
-      antialias: true,
-    });
+    const source = bakeTexture(renderer, g, resolution, new Rectangle(0, 0, MAX_W, totalH));
     g.destroy();
     for (const c of cells) {
       atlas.map.set(
         c.e.name,
         new Texture({
-          source: rt.source,
+          source,
           frame: new Rectangle(c.x, c.y, c.e.w, c.e.h),
           defaultAnchor: { x: c.e.ax / c.e.w, y: c.e.ay / c.e.h },
         }),

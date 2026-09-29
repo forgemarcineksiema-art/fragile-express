@@ -320,7 +320,7 @@ export class AudioEngine {
         setInterval(() => this.tick(), 50);
         this.nextNoteAt = ctx.currentTime + 0.15;
       }
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.ctx.state !== 'running') void this.ctx.resume();
     } catch {
       this.ctx = null;
     }
@@ -388,7 +388,8 @@ export class AudioEngine {
     const p = ctx.createStereoPanner();
     p.pan.value = Math.max(-1, Math.min(1, pan));
     g.connect(p).connect(this.sfxBus!);
-    RECIPES[name]({ ctx, dest: g, t: now, noise: this.noiseBuf! }, pitch);
+    const spread = name === 'drop' || name === 'clink' || name === 'pay' || name === 'step' || name === 'stamp' ? (Math.random() - 0.5) * 1.2 : 0;
+    RECIPES[name]({ ctx, dest: g, t: now, noise: this.noiseBuf! }, pitch + spread);
     // Disconnect the voice once it has rung out.
     setTimeout(() => {
       g.disconnect();

@@ -24,7 +24,6 @@ import { WorldView } from './world.ts';
 const STEP = 1 / 60;
 const AUTOSAVE = 10;
 /** No commercial breaks during the first 5 minutes of play (lifetime). */
-const NO_ADS_BEFORE = 5 * 60;
 
 type State = 'boot' | 'play' | 'pause' | 'screen' | 'ad';
 
@@ -76,7 +75,9 @@ export class Game {
       this.togglePause();
     });
     this.ui.pauseBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    window.addEventListener('pointerdown', () => Sound.unlock(), { capture: true });
+    for (const ev of ['pointerdown', 'pointerup', 'touchend', 'keydown'] as const) {
+      window.addEventListener(ev, () => Sound.unlock(), { capture: true });
+    }
 
     Poki.setHooks({
       onAdStart: () => {
@@ -224,11 +225,8 @@ export class Game {
   private async offlineFlow(coins: number, seconds: number): Promise<void> {
     const choice = await this.ui.showOffline(coins, seconds);
     let gain = coins;
-    if (choice === 'double') {
-      if (await this.rewarded('medium')) gain *= 2;
-    } else {
-      await this.maybeCommercial();
-    }
+    // Shown at startup: no commercial break here.
+    if (choice === 'double' && (await this.rewarded('medium'))) gain *= 2;
     this.wh.coins += gain;
     this.world.fx.float(this.wh.player.x, this.wh.player.y - 70, `+${formatCoins(gain)}`, 0xfde047, 26);
     Sound.play('coin');
@@ -240,9 +238,11 @@ export class Game {
   // Ads
   // -------------------------------------------------------------------------------------------
 
-  /** commercialBreak only when returning to gameplay from a screen, never in the first 5 minutes. */
+  /**
+   * A commercial break whenever the player returns to gameplay from a screen. Poki decides whether an
+   * ad actually plays (no timers of our own); never called at startup.
+   */
   private async maybeCommercial(): Promise<void> {
-    if (this.data.playTime < NO_ADS_BEFORE) return;
     this.state = 'ad';
     await Poki.commercialBreak();
   }
@@ -252,7 +252,6 @@ export class Game {
     this.state = 'ad';
     const ok = await Poki.rewardedBreak(size);
     this.state = prev === 'ad' ? 'play' : prev;
-    if (!ok) this.ui.toast(t('ui.adUnavailable'));
     return ok;
   }
 
@@ -261,7 +260,6 @@ export class Game {
     const ok = await Poki.rewardedBreak(size);
     this.wh.resolveAd(id, ok);
     this.handleEvents(this.wh.drainEvents());
-    if (!ok) this.ui.toast(t('ui.adUnavailable'));
     this.state = 'play';
   }
 

@@ -1,8 +1,9 @@
 // Entity views for the belt, shelves and the cash desk.
-import { Container, Graphics, Text, TilingSprite, type Renderer, type Texture } from 'pixi.js';
+import { Container, Graphics, Text, Texture, TilingSprite, type Renderer } from 'pixi.js';
 import type { Belt, Shelf } from '../../sim/stations.ts';
 import type { Warehouse } from '../../sim/warehouse.ts';
 import { drawSymbol, PARCEL } from '../art.ts';
+import { bakeTexture } from '../atlas.ts';
 import { COIN, DISTRICT_COLORS, DISTRICT_SYMBOLS, INK, WHITE, shade } from '../palette.ts';
 import { label, setText } from '../text.ts';
 
@@ -16,7 +17,7 @@ export function beltTexture(renderer: Renderer): Texture {
   g.rect(0, 0, 24, 34).fill(0x334155);
   g.rect(0, 0, 4, 34).fill(0x475569);
   g.rect(12, 0, 1.5, 34).fill({ color: 0x1e293b, alpha: 0.8 });
-  const tex = renderer.generateTexture({ target: g, resolution: 2 });
+  const tex = new Texture({ source: bakeTexture(renderer, g, 2) });
   g.destroy();
   return tex;
 }
