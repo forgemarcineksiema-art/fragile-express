@@ -2,24 +2,31 @@
 import type { Renderer } from 'pixi.js';
 import type { ParcelKind } from '../sim/types.ts';
 import {
-  drawArm,
+  drawCapLogo,
+  drawCapStyle,
+  drawDrop,
+  drawFace,
+  drawForearm,
+  drawHairStyle,
+  drawHardhatStyle,
+  drawHeadShape,
+  drawPantsLeg,
+  drawShoe,
+  drawSleeve,
+  drawTorsoOutfit,
+  OUTFITS,
+  type Outfit,
+} from './art-people.ts';
+import {
   drawBubble,
   drawCash,
   drawCoinFace,
   drawGlint,
-  drawCap,
-  drawHair,
   drawHand,
-  drawHardhat,
   drawCoin,
-  drawEyes,
-  drawHead,
   drawIcon,
-  drawLeg,
   drawParcel,
   drawShadow,
-  drawTorso,
-  drawTorsoDetail,
   drawVan,
   drawVanDoors,
   drawVanShadow,
@@ -83,18 +90,30 @@ export function buildAtlas(renderer: Renderer): Atlas {
   e.push({ name: 'glint', w: 22, h: 22, ax: 11, ay: 11, draw: (g, x, y) => drawGlint(g, x, y) });
   e.push({ name: 'cash', w: 28, h: 22, ax: 14, ay: 20, draw: (g, x, y) => drawCash(g, x, y) });
   e.push({ name: 'shadow', w: 36, h: 16, ax: 18, ay: 8, draw: (g, x, y) => drawShadow(g, x, y, 16, 6.5) });
-  e.push({ name: 'torso', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorso(g, x, y) });
-  e.push({ name: 'torso_detail', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorsoDetail(g, x, y) });
-  e.push({ name: 'head', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawHead(g, x, y) });
+  // Characters
   for (const f of ['front', 'side', 'back'] as const) {
-    e.push({ name: `cap_${f}`, w: 36, h: 22, ax: 12, ay: 14, draw: (g, x, y) => drawCap(g, x, y, f) });
-    e.push({ name: `hardhat_${f}`, w: 36, h: 22, ax: 14, ay: 14, draw: (g, x, y) => drawHardhat(g, x, y, f) });
-    e.push({ name: `hair_${f}`, w: 26, h: 26, ax: 13, ay: 13, draw: (g, x, y) => drawHair(g, x, y, f) });
+    e.push({ name: `head_${f}`, w: 34, h: 30, ax: 17, ay: 15, draw: (g, x, y) => drawHeadShape(g, x, y, f) });
+    e.push({ name: `hair_${f}`, w: 32, h: 32, ax: 16, ay: 16, draw: (g, x, y) => drawHairStyle(g, x, y, f) });
+    e.push({ name: `cap_${f}`, w: 34, h: 22, ax: 14, ay: 16, draw: (g, x, y) => drawCapStyle(g, x, y, f) });
+    e.push({ name: `hardhat_${f}`, w: 34, h: 22, ax: 16, ay: 16, draw: (g, x, y) => drawHardhatStyle(g, x, y, f) });
   }
-  e.push({ name: 'eyes_front', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawEyes(g, x, y, 'front') });
-  e.push({ name: 'eyes_side', w: 24, h: 24, ax: 12, ay: 12, draw: (g, x, y) => drawEyes(g, x, y, 'side') });
-  e.push({ name: 'leg', w: 10, h: 14, ax: 5, ay: 13, draw: (g, x, y) => drawLeg(g, x, y) });
-  e.push({ name: 'arm', w: 8, h: 16, ax: 4, ay: 1, draw: (g, x, y) => drawArm(g, x, y) });
+  for (const f of ['front', 'side'] as const) {
+    e.push({ name: `caplogo_${f}`, w: 20, h: 20, ax: 10, ay: 14, draw: (g, x, y) => drawCapLogo(g, x, y, f) });
+    for (const m of ['normal', 'happy', 'worried', 'shock', 'blink'] as const) {
+      e.push({ name: `face_${f}_${m}`, w: 30, h: 24, ax: 13, ay: 10, draw: (g, x, y) => drawFace(g, x, y, f, m) });
+    }
+  }
+  for (const o of Object.keys(OUTFITS) as Outfit[]) {
+    for (const back of [false, true]) {
+      e.push({ name: `torso_${o}_${back ? 'back' : 'front'}`, w: 34, h: 28, ax: 17, ay: 25, draw: (g, x, y) => drawTorsoOutfit(g, x, y, o, back) });
+    }
+  }
+  e.push({ name: 'sleeve', w: 10, h: 12, ax: 5, ay: 1, draw: (g, x, y) => drawSleeve(g, x, y) });
+  e.push({ name: 'forearm', w: 8, h: 12, ax: 4, ay: 1, draw: (g, x, y) => drawForearm(g, x, y) });
+  e.push({ name: 'pants_leg', w: 10, h: 14, ax: 5, ay: 13, draw: (g, x, y) => drawPantsLeg(g, x, y) });
+  e.push({ name: 'shoe_front', w: 12, h: 8, ax: 6, ay: 4, draw: (g, x, y) => drawShoe(g, x, y, false) });
+  e.push({ name: 'shoe_side', w: 16, h: 8, ax: 5, ay: 4, draw: (g, x, y) => drawShoe(g, x, y, true) });
+  e.push({ name: 'drop', w: 12, h: 14, ax: 6, ay: 7, draw: (g, x, y) => drawDrop(g, x, y) });
   for (const name of ICONS) {
     e.push({ name: `icon_${name}`, w: 64, h: 64, ax: 32, ay: 32, draw: (g, x, y) => drawIcon(g, name, x, y, 26) });
   }

@@ -3,12 +3,12 @@
 // so the stack lags behind when the carrier speeds up and whips back when it stops.
 import { Container, Sprite, type Text } from 'pixi.js';
 import type { Carrier } from '../../sim/carrier.ts';
+import { OUTFITS, type FaceKind, type Mood, type Outfit } from '../art-people.ts';
 import type { Atlas } from '../atlas.ts';
-import { COIN, INK, ROLE_SHIRT } from '../palette.ts';
+import { COIN, INK } from '../palette.ts';
 import { label } from '../text.ts';
 
 const SKINS = [0xf5c9a0, 0xe0ac7e, 0xc68642, 0x8d5524, 0xffdbac, 0xd4a373];
-const PANTS = [0x334155, 0x1e3a8a, 0x3f3f46, 0x44403c];
 const HAIR = [0x3b2a1a, 0x1f1a17, 0x7c4a1e, 0xd6a24a, 0x9a3412, 0x57534e];
 
 /** Height of the hands above the ground: the first parcel of the stack sits here. */
@@ -19,29 +19,42 @@ type Facing = 'front' | 'side' | 'back';
 const K = 230; // spring stiffness between neighbouring parcels
 const D = 12; // damping
 const INERTIA = 0.034; // how much the carrier's acceleration pushes each parcel
+const HEAD_Y = -41;
+const SHOULDER_Y = -29;
+const ARM_LEN = 15;
 
 export class CharacterView {
   readonly node = new Container();
-  /** Drawn in front of the stack: hands and speech bubbles. */
+  /** Drawn in front of the stack: hands, sweat drop and speech bubbles. */
   readonly front = new Container();
   private readonly legL: Sprite;
   private readonly legR: Sprite;
+  private readonly shoeL: Sprite;
+  private readonly shoeR: Sprite;
   private readonly body = new Container();
-  private readonly armL: Sprite;
-  private readonly armR: Sprite;
+  private readonly torso: Sprite;
+  private readonly armL = new Container();
+  private readonly armR = new Container();
+  private readonly head: Sprite;
+  private readonly face: Sprite;
   private readonly hair: Sprite;
   private readonly hat: Sprite;
-  private readonly eyes: Sprite;
+  private readonly logo: Sprite | null;
   private readonly handL: Sprite;
   private readonly handR: Sprite;
+  private readonly drop: Sprite;
   private readonly bag: Sprite[] = [];
+  private readonly outfit: Outfit;
   private readonly hatName: 'cap' | 'hardhat';
   private readonly bubble = new Container();
   private readonly bubbleText: Text;
   private bubbleT = 0;
-  private facing: Facing = 'front';
+  private facing: Facing | null = null;
+  private faceKey = '';
   private flip = 1;
   private blinkT = 2 + Math.random() * 3;
+  private mood: Mood = 'normal';
+  private moodT = 0;
   private started = false;
   private lastX = 0;
   private vx = 0;
@@ -59,38 +72,47 @@ export class CharacterView {
   ) {
     const role = carrier.role;
     const seed = Math.abs(carrier.id * 7919);
+    this.outfit = helper ? 'helper' : (role as Outfit);
+    const style = OUTFITS[this.outfit];
     const skin = role === 'player' ? SKINS[0]! : SKINS[seed % SKINS.length]!;
-    const pants = role === 'player' ? 0x1e3a8a : PANTS[seed % PANTS.length]!;
     const hairColor = role === 'player' ? 0x5b3a1b : HAIR[(seed >> 3) % HAIR.length]!;
-    const shirt = helper ? ROLE_SHIRT.helper! : ROLE_SHIRT[role]!;
-    this.hatName = role === 'loader' && !helper ? 'hardhat' : 'cap';
-    const hatColor = role === 'player' ? 0xdc2626 : helper ? 0x6b21a8 : role === 'loader' ? 0xfacc15 : role === 'collector' ? 0xca8a04 : 0x15803d;
+    this.hatName = style.hat;
 
     const shadow = this.part('shadow');
-    this.legL = this.part('leg', pants);
-    this.legR = this.part('leg', pants);
-    const torso = this.part('torso', shirt);
-    const detail = this.part('torso_detail');
-    this.armL = this.part('arm', shirt);
-    this.armR = this.part('arm', shirt);
-    const head = this.part('head', skin);
+    this.legL = this.part('pants_leg', style.pants);
+    this.legR = this.part('pants_leg', style.pants);
+    this.shoeL = this.part('shoe_front', style.shoes);
+    this.shoeR = this.part('shoe_front', style.shoes);
+    this.torso = this.part(`torso_${this.outfit}_front`);
+    for (const arm of [this.armL, this.armR]) {
+      const sleeve = this.part('sleeve', style.sleeve);
+      const fore = this.part('forearm', style.forearm ?? skin);
+      fore.position.set(0, 7);
+      arm.addChild(sleeve, fore);
+    }
+    this.head = this.part('head_front', skin);
+    this.face = this.part('face_front_normal');
     this.hair = this.part('hair_front', hairColor);
-    this.hat = this.part(`${this.hatName}_front`, hatColor);
-    this.eyes = this.part('eyes_front');
-    this.handL = this.part('hand', skin);
-    this.handR = this.part('hand', skin);
+    this.hat = this.part(`${this.hatName}_front`, style.hatColor);
+    this.logo = role === 'player' ? this.part('caplogo_front') : null;
+    const handTint = style.glove ?? skin;
+    this.handL = this.part('hand', handTint);
+    this.handR = this.part('hand', handTint);
+    this.drop = this.part('drop');
+    this.drop.visible = false;
 
-    this.legL.position.set(-4.5, 0);
-    this.legR.position.set(4.5, 0);
-    torso.position.set(0, -9);
-    detail.position.set(0, -9);
-    head.position.set(0, -38);
-    this.hair.position.set(0, -38);
-    this.hat.position.set(0, -39);
-    this.eyes.position.set(0, -38);
-    this.node.addChild(shadow, this.legL, this.legR, this.body);
-    this.body.addChild(this.armL, torso, detail, this.armR, head, this.hair, this.eyes, this.hat);
-    this.front.addChild(this.handL, this.handR, this.bubble);
+    this.legL.position.set(-4.5, -1.5);
+    this.legR.position.set(4.5, -1.5);
+    this.torso.position.set(0, -9);
+    for (const p of [this.head, this.hair]) p.position.set(0, HEAD_Y);
+    this.face.position.set(0, HEAD_Y + 1);
+    // Hats sit a little high so the brim never covers the eyes.
+    this.hat.position.set(0, HEAD_Y - 2);
+    this.logo?.position.set(0, HEAD_Y - 2);
+    this.node.addChild(shadow, this.legL, this.legR, this.shoeL, this.shoeR, this.body);
+    this.body.addChild(this.armL, this.torso, this.armR, this.head, this.face, this.hair, this.hat);
+    if (this.logo) this.body.addChild(this.logo);
+    this.front.addChild(this.handL, this.handR, this.drop, this.bubble);
 
     const bubbleSprite = this.part('bubble');
     this.bubbleText = label('', 17, INK, { stroke: { color: 0xffffff, width: 0 } });
@@ -119,6 +141,12 @@ export class CharacterView {
     return s;
   }
 
+  /** Shows a mood for a moment (happy after a sale, shocked after a break). */
+  emote(mood: Mood, seconds = 1): void {
+    this.mood = mood;
+    this.moodT = seconds;
+  }
+
   /** Screen-space offset of the stack base relative to the feet. */
   stackOffset(): { dx: number; front: boolean } {
     // Held out in front when walking sideways, so the face stays visible.
@@ -142,6 +170,8 @@ export class CharacterView {
     this.bubbleText.text = text;
     this.bubbleT = seconds;
     this.bubble.visible = true;
+    if (text === '!') this.emote('shock', 1.1);
+    else this.emote('happy', 1);
   }
 
   update(x: number, y: number, dt: number, time: number): void {
@@ -161,11 +191,21 @@ export class CharacterView {
       this.facing = next;
       this.hat.texture = this.atlas.get(`${this.hatName}_${next}`);
       this.hair.texture = this.atlas.get(`hair_${next}`);
-      this.eyes.visible = next !== 'back';
-      if (next !== 'back') this.eyes.texture = this.atlas.get(`eyes_${next === 'side' ? 'side' : 'front'}`);
+      this.head.texture = this.atlas.get(`head_${next}`);
+      this.torso.texture = this.atlas.get(`torso_${this.outfit}_${next === 'back' ? 'back' : 'front'}`);
+      this.face.visible = next !== 'back';
+      if (this.logo) {
+        this.logo.visible = next !== 'back';
+        if (next !== 'back') this.logo.texture = this.atlas.get(`caplogo_${next}`);
+      }
+      const shoe = this.atlas.get(next === 'side' ? 'shoe_side' : 'shoe_front');
+      this.shoeL.texture = shoe;
+      this.shoeR.texture = shoe;
+      this.faceKey = '';
     }
     this.flip = next === 'side' && c.dirX < 0 ? -1 : 1;
     this.body.scale.x = this.flip;
+    this.shoeL.scale.x = this.shoeR.scale.x = next === 'side' ? this.flip : 1;
 
     // Velocity and acceleration of the carrier on screen (drives lean and the stack springs).
     if (!this.started) {
@@ -184,8 +224,8 @@ export class CharacterView {
     const phase = c.walked / 8.5;
     const moving = c.moving;
     const swing = moving ? Math.sin(phase) : 0;
-    this.legL.y = moving ? -Math.max(0, swing) * 3 : 0;
-    this.legR.y = moving ? -Math.max(0, -swing) * 3 : 0;
+    this.legL.y = -1.5 - (moving ? Math.max(0, swing) * 3 : 0);
+    this.legR.y = -1.5 - (moving ? Math.max(0, -swing) * 3 : 0);
     if (next === 'side') {
       this.legL.x = -2 + swing * 4 * this.flip;
       this.legR.x = 2 - swing * 4 * this.flip;
@@ -193,6 +233,8 @@ export class CharacterView {
       this.legL.x = -4.5;
       this.legR.x = 4.5;
     }
+    this.shoeL.position.set(this.legL.x, this.legL.y + 1.5);
+    this.shoeR.position.set(this.legR.x, this.legR.y + 1.5);
     const step = Math.abs(Math.cos(phase));
     this.bob = moving ? -step * 1.8 : Math.sin(time * 2.2 + c.id) * 0.5;
     this.body.y = this.bob;
@@ -206,13 +248,13 @@ export class CharacterView {
     if (carrying) {
       this.armL.rotation = next === 'side' ? -1.75 : 2.75;
       this.armR.rotation = next === 'side' ? -1.75 : -2.75;
-      this.armL.position.set(next === 'side' ? 3 : -9, -27);
-      this.armR.position.set(next === 'side' ? 5 : 9, -27);
+      this.armL.position.set(next === 'side' ? 3 : -10, SHOULDER_Y + 2);
+      this.armR.position.set(next === 'side' ? 5 : 10, SHOULDER_Y + 2);
     } else {
-      this.armL.rotation = moving ? swing * 0.6 : 0.08;
-      this.armR.rotation = moving ? -swing * 0.6 : -0.08;
-      this.armL.position.set(-10, -28);
-      this.armR.position.set(10, -28);
+      this.armL.rotation = moving ? swing * 0.6 : 0.1;
+      this.armR.rotation = moving ? -swing * 0.6 : -0.1;
+      this.armL.position.set(-11, SHOULDER_Y);
+      this.armR.position.set(11, SHOULDER_Y);
     }
     this.armL.visible = this.armR.visible = !(back && carrying);
 
@@ -234,18 +276,29 @@ export class CharacterView {
       const cos = Math.cos(this.body.rotation);
       const sin = Math.sin(this.body.rotation);
       const place = (hand: Sprite, shoulderX: number, r: number): void => {
-        const lx = this.flip * (shoulderX - Math.sin(r) * 12);
-        const ly = -28 + Math.cos(r) * 12;
+        const lx = this.flip * (shoulderX - Math.sin(r) * ARM_LEN);
+        const ly = SHOULDER_Y + Math.cos(r) * ARM_LEN;
         hand.position.set(lx * cos - ly * sin, lx * sin + ly * cos + this.bob);
       };
-      place(this.handL, -10, this.armL.rotation);
-      place(this.handR, 10, this.armR.rotation);
+      place(this.handL, -11, this.armL.rotation);
+      place(this.handR, 11, this.armR.rotation);
     }
 
-    // Blink now and then.
+    // Mood: emotes win, then worry about a wobbling stack; blink now and then.
+    if (this.moodT > 0) this.moodT -= dt;
+    else this.mood = c.wobble > 0.35 || (c.role === 'player' && c.hasFragile() && c.runTime > 1.6) ? 'worried' : 'normal';
     this.blinkT -= dt;
-    this.eyes.scale.y = this.blinkT < 0.12 ? 0.15 : 1;
     if (this.blinkT <= 0) this.blinkT = 2.5 + Math.random() * 3;
+    const kind: FaceKind = this.mood === 'normal' && this.blinkT < 0.13 ? 'blink' : this.mood;
+    if (next !== 'back') {
+      const key = `face_${next === 'side' ? 'side' : 'front'}_${kind}`;
+      if (key !== this.faceKey) {
+        this.faceKey = key;
+        this.face.texture = this.atlas.get(key);
+      }
+    }
+    this.drop.visible = this.mood === 'worried' && !back;
+    if (this.drop.visible) this.drop.position.set(this.flip * (next === 'side' ? -8 : 11), HEAD_Y - 6 + this.bob + Math.abs(Math.sin(time * 5)) * 3);
 
     for (let i = 0; i < this.bag.length; i++) {
       this.bag[i]!.visible = c.coins > 0 && i < Math.ceil((c.coins / Math.max(1, c.coinCap)) * this.bag.length);
@@ -288,7 +341,7 @@ export class CharacterView {
     if (this.bubbleT <= 0) return;
     this.bubbleT -= dt;
     const top = -64 - this.carrier.stack.length * 3;
-    this.bubble.position.set(this.facing === 'side' ? -this.flip * 16 : -18, top);
+    this.bubble.position.set(this.facing === 'side' ? -this.flip * 18 : -20, top);
     const age = 1.2 - this.bubbleT;
     const pop = age < 0.15 ? 0.5 + (age / 0.15) * 0.6 : age < 0.25 ? 1.1 - ((age - 0.15) / 0.1) * 0.1 : 1;
     this.bubble.scale.set(this.bubbleT < 0.15 ? Math.max(0, this.bubbleT / 0.15) : pop);

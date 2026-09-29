@@ -438,6 +438,7 @@ export class Game {
             this.sfx('clink', Math.min(12, i));
           });
           world.fx.payout(wh.player.x, wh.player.y - 96, `+${formatCoins(e.amount)}`);
+          world.emote(wh.player.id, 'happy', 0.9);
           this.sfx('coin');
           break;
         }
@@ -456,6 +457,7 @@ export class Game {
           const big = pad.def.type !== 'upgrade';
           this.sfx(big ? 'unlock' : 'buy');
           world.fx.confetti(e.x, e.y);
+          world.emote(wh.player.id, 'happy', 1.2);
           if (e.reveal) {
             this.camera.startReveal(e.reveal.x, e.reveal.y);
             this.lockInput = 0.4;

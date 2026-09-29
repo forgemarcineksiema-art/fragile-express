@@ -186,90 +186,11 @@ export function drawShadow(g: Graphics, x: number, y: number, rx: number, ry: nu
 }
 
 // ---------------------------------------------------------------------------------------------
-// Character parts (drawn white so they can be tinted per worker)
+// Small character bits (the rest lives in art-people.ts)
 // ---------------------------------------------------------------------------------------------
-
-export function drawTorso(g: Graphics, x: number, by: number): void {
-  // White shirt body; bottom edge at `by`.
-  g.roundRect(x - 11, by - 21, 22, 21, 7).fill(WHITE);
-  g.roundRect(x - 11, by - 7, 22, 7, 3).fill({ color: 0x000000, alpha: 0.12 });
-}
-
-export function drawTorsoDetail(g: Graphics, x: number, by: number): void {
-  // Collar and a pocket logo; untinted overlay.
-  g.poly([x - 5, by - 21, x + 5, by - 21, x, by - 16]).fill({ color: 0x000000, alpha: 0.18 });
-  g.circle(x + 5, by - 12, 2.4).fill({ color: WHITE, alpha: 0.85 });
-  g.rect(x - 11, by - 4, 22, 3).fill({ color: 0x3f2d1f, alpha: 0.55 });
-}
-
-export function drawHead(g: Graphics, x: number, cy: number): void {
-  g.circle(x, cy, 10).fill(WHITE);
-  g.circle(x + 2, cy + 2, 8).fill({ color: 0x000000, alpha: 0.06 });
-}
-
-export function drawCap(g: Graphics, x: number, cy: number, facing: 'front' | 'side' | 'back'): void {
-  // Crown
-  g.moveTo(x - 10.5, cy - 1)
-    .arc(x, cy - 1, 10.5, Math.PI, 0)
-    .lineTo(x + 10.5, cy - 1)
-    .closePath()
-    .fill(WHITE);
-  if (facing === 'front') g.ellipse(x, cy, 9, 3).fill(WHITE);
-  else if (facing === 'side') g.roundRect(x + 4, cy - 3.2, 11, 4.4, 2).fill(WHITE);
-  // Band
-  g.rect(x - 10.5, cy - 3, 21, 2.4).fill({ color: 0x000000, alpha: 0.18 });
-}
-
-export function drawEyes(g: Graphics, x: number, cy: number, facing: 'front' | 'side'): void {
-  if (facing === 'front') {
-    g.circle(x - 3.6, cy + 2.5, 1.7).fill(INK);
-    g.circle(x + 3.6, cy + 2.5, 1.7).fill(INK);
-    g.circle(x - 3.1, cy + 1.9, 0.6).fill(WHITE);
-    g.circle(x + 4.1, cy + 1.9, 0.6).fill(WHITE);
-    g.moveTo(x - 2.4, cy + 6).quadraticCurveTo(x, cy + 7.6, x + 2.4, cy + 6).stroke({ width: 1.2, color: INK, alpha: 0.7 });
-  } else {
-    g.circle(x + 5.2, cy + 2.4, 1.7).fill(INK);
-    g.circle(x + 5.7, cy + 1.8, 0.6).fill(WHITE);
-  }
-}
-
-export function drawLeg(g: Graphics, x: number, by: number): void {
-  g.roundRect(x - 3.2, by - 11, 6.4, 11, 3).fill(WHITE);
-  g.roundRect(x - 3.6, by - 3.4, 7.8, 3.4, 1.6).fill({ color: 0x1f1f1f, alpha: 0.85 });
-}
-
-export function drawArm(g: Graphics, x: number, ty: number): void {
-  g.roundRect(x - 2.8, ty, 5.6, 13, 2.8).fill(WHITE);
-}
 
 export function drawHand(g: Graphics, x: number, y: number): void {
   g.circle(x, y, 3.6).fill(WHITE);
-}
-
-/** Loader's hard hat (drawn white, tinted yellow). */
-export function drawHardhat(g: Graphics, x: number, cy: number, facing: 'front' | 'side' | 'back'): void {
-  g.moveTo(x - 11, cy - 1)
-    .arc(x, cy - 1, 11, Math.PI, 0)
-    .lineTo(x + 11, cy - 1)
-    .closePath()
-    .fill(WHITE);
-  if (facing === 'side') g.roundRect(x - 12, cy - 2.4, 28, 4, 2).fill(WHITE);
-  else g.roundRect(x - 13.5, cy - 2.4, 27, 4, 2).fill(WHITE);
-  g.rect(x - 1.6, cy - 11.5, 3.2, 10).fill({ color: 0x000000, alpha: 0.13 });
-  g.rect(x - 11, cy - 3.4, 22, 1.4).fill({ color: 0x000000, alpha: 0.16 });
-}
-
-/** Hair seen under the cap: most of the head from behind, the back half from the side. */
-export function drawHair(g: Graphics, x: number, cy: number, facing: 'front' | 'side' | 'back'): void {
-  if (facing === 'back') {
-    g.circle(x, cy + 0.5, 10.3).fill(WHITE);
-  } else if (facing === 'side') {
-    g.moveTo(x + 1, cy - 9).arc(x, cy, 10.3, -Math.PI / 2, Math.PI / 2, true).closePath().fill(WHITE);
-    g.circle(x - 1, cy + 5.5, 3.5).fill(WHITE);
-  } else {
-    g.ellipse(x - 8.5, cy + 1.5, 2.6, 4.2).fill(WHITE);
-    g.ellipse(x + 8.5, cy + 1.5, 2.6, 4.2).fill(WHITE);
-  }
 }
 
 /** Speech bubble; anchor at the tip of the tail. */

@@ -227,6 +227,16 @@ export class Fx {
     }
   }
 
+  /** Dust kicked up by a running foot. */
+  stepPuff(x: number, y: number): void {
+    for (let i = 0; i < 2; i++) {
+      const s = this.sprite('dot', 0xe7e5e4);
+      s.scale.set(0.22 + Math.random() * 0.1);
+      s.alpha = 0.6;
+      this.add({ s, x: x + (Math.random() - 0.5) * 8, y: y + (Math.random() - 0.5) * 3, z: 1, vx: (Math.random() - 0.5) * 30, vy: 0, vz: 18 + Math.random() * 10, max: 0.35, grow: 1.1 });
+    }
+  }
+
   /** Exhaust puff: a grey ball that drifts up, grows and fades. */
   puff(x: number, y: number): void {
     const s = this.sprite('dot', Math.random() < 0.5 ? 0xd1d5db : 0xe5e7eb);

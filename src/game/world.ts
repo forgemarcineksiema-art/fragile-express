@@ -160,6 +160,31 @@ export class WorldView {
     }
   }
 
+  /** A short happy/shocked face on a carrier. */
+  emote(carrierId: number, mood: 'happy' | 'shock', seconds = 1): void {
+    this.chars.get(carrierId)?.emote(mood, seconds);
+  }
+
+  private readonly lastDust = new Map<number, number>();
+
+  /** Little dust clouds kicked up by running feet. */
+  private stepDust(): void {
+    for (const c of this.wh.carriers) {
+      const v = this.chars.get(c.id);
+      if (!v) continue;
+      const last = this.lastDust.get(c.id) ?? c.walked;
+      const fast = c.running && Math.hypot(c.vx, c.vy) > 150;
+      if (!fast) {
+        this.lastDust.set(c.id, c.walked);
+        continue;
+      }
+      if (c.walked - last >= 34) {
+        this.lastDust.set(c.id, c.walked);
+        this.fx.stepPuff(v.x - c.dirX * 8, v.y + 2);
+      }
+    }
+  }
+
   /** Speech bubble over a carrier. */
   say(carrierId: number, text: string): void {
     const v = this.chars.get(carrierId);
@@ -223,6 +248,7 @@ export class WorldView {
     this.fx.update(dt);
     this.drawWobble(time);
     this.drawHelperTimers();
+    if (dt > 0) this.stepDust();
     this.fx.noText = this.cinematic;
     if (this.cinematic) this.applyCinematic();
   }
