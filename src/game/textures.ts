@@ -2,19 +2,23 @@
 import type { Renderer } from 'pixi.js';
 import type { ParcelKind } from '../sim/types.ts';
 import {
+  drawBeard,
   drawCapLogo,
   drawCapStyle,
   drawDrop,
   drawFace,
-  drawForearm,
   drawHairStyle,
+  drawHandShape,
   drawHardhatStyle,
   drawHeadShape,
-  drawPantsLeg,
+  drawLimb,
+  drawNeck,
   drawShoe,
-  drawSleeve,
   drawTorsoOutfit,
+  FACE_KINDS,
+  HAIR_STYLES,
   OUTFITS,
+  RIG,
   type Outfit,
 } from './art-people.ts';
 import {
@@ -22,7 +26,6 @@ import {
   drawCash,
   drawCoinFace,
   drawGlint,
-  drawHand,
   drawCoin,
   drawIcon,
   drawParcel,
@@ -62,7 +65,7 @@ export const ICONS: IconName[] = [
 export const parcelTex = (district: number, kind: ParcelKind, sorted: boolean): string =>
   `parcel_${district}_${kind}_${sorted ? 1 : 0}`;
 
-export function buildAtlas(renderer: Renderer): Atlas {
+export function buildAtlas(renderer: Renderer, resolution = 2): Atlas {
   const e: AtlasEntry[] = [];
   for (let d = 0; d < DISTRICT_COLORS.length; d++) {
     for (const kind of KINDS) {
@@ -83,37 +86,41 @@ export function buildAtlas(renderer: Renderer): Atlas {
   e.push({ name: 'van_doors', w: 204, h: 150, ax: 102, ay: 98, draw: (g, x, y) => drawVanDoors(g, x, y) });
   e.push({ name: 'van_shadow', w: 210, h: 100, ax: 104, ay: 44, draw: (g, x, y) => drawVanShadow(g, x, y) });
   e.push({ name: 'wheel', w: 28, h: 28, ax: 14, ay: 14, draw: (g, x, y) => drawWheel(g, x, y) });
-  e.push({ name: 'hand', w: 10, h: 10, ax: 5, ay: 5, draw: (g, x, y) => drawHand(g, x, y) });
   e.push({ name: 'bubble', w: 36, h: 40, ax: 18, ay: 38, draw: (g, x, y) => drawBubble(g, x, y) });
   e.push({ name: 'coin', w: 20, h: 15, ax: 10, ay: 7, draw: (g, x, y) => drawCoin(g, x, y) });
   e.push({ name: 'coin_face', w: 22, h: 22, ax: 11, ay: 11, draw: (g, x, y) => drawCoinFace(g, x, y) });
   e.push({ name: 'glint', w: 22, h: 22, ax: 11, ay: 11, draw: (g, x, y) => drawGlint(g, x, y) });
   e.push({ name: 'cash', w: 28, h: 22, ax: 14, ay: 20, draw: (g, x, y) => drawCash(g, x, y) });
   e.push({ name: 'shadow', w: 36, h: 16, ax: 18, ay: 8, draw: (g, x, y) => drawShadow(g, x, y, 16, 6.5) });
-  // Characters
-  for (const f of ['front', 'side', 'back'] as const) {
-    e.push({ name: `head_${f}`, w: 34, h: 30, ax: 17, ay: 15, draw: (g, x, y) => drawHeadShape(g, x, y, f) });
-    e.push({ name: `hair_${f}`, w: 32, h: 32, ax: 16, ay: 16, draw: (g, x, y) => drawHairStyle(g, x, y, f) });
-    e.push({ name: `cap_${f}`, w: 34, h: 22, ax: 14, ay: 16, draw: (g, x, y) => drawCapStyle(g, x, y, f) });
-    e.push({ name: `hardhat_${f}`, w: 34, h: 22, ax: 16, ay: 16, draw: (g, x, y) => drawHardhatStyle(g, x, y, f) });
+  // Characters (cut-out rig, see art-people.ts)
+  const facings = ['front', 'side', 'back'] as const;
+  for (const f of facings) {
+    e.push({ name: `head_${f}`, w: 18, h: 18, ax: 9, ay: 9, draw: (g, x, y) => drawHeadShape(g, x, y, f) });
+    e.push({ name: `cap_${f}`, w: 24, h: 16, ax: 10, ay: 12, draw: (g, x, y) => drawCapStyle(g, x, y, f) });
+    e.push({ name: `hardhat_${f}`, w: 24, h: 16, ax: 11, ay: 13, draw: (g, x, y) => drawHardhatStyle(g, x, y, f) });
+    for (const st of HAIR_STYLES) {
+      e.push({ name: `hair_${st}_${f}`, w: 24, h: 24, ax: 12, ay: 11, draw: (g, x, y) => drawHairStyle(g, x, y, st, f) });
+    }
+    for (const o of Object.keys(OUTFITS) as Outfit[]) {
+      e.push({ name: `torso_${o}_${f}`, w: 30, h: 27, ax: 15, ay: 24, draw: (g, x, y) => drawTorsoOutfit(g, x, y, o, f) });
+    }
   }
   for (const f of ['front', 'side'] as const) {
-    e.push({ name: `caplogo_${f}`, w: 20, h: 20, ax: 10, ay: 14, draw: (g, x, y) => drawCapLogo(g, x, y, f) });
-    for (const m of ['normal', 'happy', 'worried', 'shock', 'blink'] as const) {
-      e.push({ name: `face_${f}_${m}`, w: 30, h: 24, ax: 13, ay: 10, draw: (g, x, y) => drawFace(g, x, y, f, m) });
+    e.push({ name: `caplogo_${f}`, w: 10, h: 10, ax: 5, ay: 8, draw: (g, x, y) => drawCapLogo(g, x, y, f) });
+    e.push({ name: `beard_${f}`, w: 16, h: 14, ax: 8, ay: 5, draw: (g, x, y) => drawBeard(g, x, y, f) });
+    for (const m of FACE_KINDS) {
+      e.push({ name: `face_${f}_${m}`, w: 16, h: 14, ax: 7, ay: 6, draw: (g, x, y) => drawFace(g, x, y, f, m) });
     }
   }
-  for (const o of Object.keys(OUTFITS) as Outfit[]) {
-    for (const back of [false, true]) {
-      e.push({ name: `torso_${o}_${back ? 'back' : 'front'}`, w: 34, h: 28, ax: 17, ay: 25, draw: (g, x, y) => drawTorsoOutfit(g, x, y, o, back) });
-    }
-  }
-  e.push({ name: 'sleeve', w: 10, h: 12, ax: 5, ay: 1, draw: (g, x, y) => drawSleeve(g, x, y) });
-  e.push({ name: 'forearm', w: 8, h: 12, ax: 4, ay: 1, draw: (g, x, y) => drawForearm(g, x, y) });
-  e.push({ name: 'pants_leg', w: 10, h: 14, ax: 5, ay: 13, draw: (g, x, y) => drawPantsLeg(g, x, y) });
-  e.push({ name: 'shoe_front', w: 12, h: 8, ax: 6, ay: 4, draw: (g, x, y) => drawShoe(g, x, y, false) });
-  e.push({ name: 'shoe_side', w: 16, h: 8, ax: 5, ay: 4, draw: (g, x, y) => drawShoe(g, x, y, true) });
-  e.push({ name: 'drop', w: 12, h: 14, ax: 6, ay: 7, draw: (g, x, y) => drawDrop(g, x, y) });
+  e.push({ name: 'neck', w: 8, h: 10, ax: 4, ay: 8, draw: (g, x, y) => drawNeck(g, x, y) });
+  e.push({ name: 'upperarm', w: 8, h: 18, ax: 4, ay: 3.5, draw: (g, x, y) => drawLimb(g, x, y, 5.3, RIG.upper, false) });
+  e.push({ name: 'forearm', w: 8, h: 17, ax: 4, ay: 3.5, draw: (g, x, y) => drawLimb(g, x, y, 4.6, RIG.fore, true) });
+  e.push({ name: 'thigh', w: 9, h: 20, ax: 4.5, ay: 4, draw: (g, x, y) => drawLimb(g, x, y, 6.5, RIG.thigh, false) });
+  e.push({ name: 'shin', w: 8, h: 20, ax: 4, ay: 3.5, draw: (g, x, y) => drawLimb(g, x, y, 5.6, RIG.shin, true) });
+  e.push({ name: 'hand', w: 8, h: 8, ax: 4, ay: 4, draw: (g, x, y) => drawHandShape(g, x, y) });
+  e.push({ name: 'shoe_front', w: 10, h: 6, ax: 5, ay: 2, draw: (g, x, y) => drawShoe(g, x, y, false) });
+  e.push({ name: 'shoe_side', w: 13, h: 6, ax: 4, ay: 2, draw: (g, x, y) => drawShoe(g, x, y, true) });
+  e.push({ name: 'drop', w: 10, h: 10, ax: 5, ay: 5, draw: (g, x, y) => drawDrop(g, x, y) });
   for (const name of ICONS) {
     e.push({ name: `icon_${name}`, w: 64, h: 64, ax: 32, ay: 32, draw: (g, x, y) => drawIcon(g, name, x, y, 26) });
   }
@@ -150,5 +157,5 @@ export function buildAtlas(renderer: Renderer): Atlas {
     ay: 0,
     draw: (g, x, y) => g.rect(x, y, 6, 6).fill(WHITE),
   });
-  return Atlas.build(renderer, e, 2);
+  return Atlas.build(renderer, e, resolution);
 }

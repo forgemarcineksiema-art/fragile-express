@@ -202,7 +202,7 @@ export class WorldView {
     if (!v) return { x: 0, y: 0 };
     let h = HANDS_Z * v.node.scale.y;
     for (const p of v.carrier.stack) h += p.kind === 'xxl' ? PARCEL_XXL.h : PARCEL.h;
-    if (v.carrier.stack.length === 0) h = 56;
+    if (v.carrier.stack.length === 0) h = 74;
     return { x: v.x + v.stackOffset().dx, y: v.y - h - PARCEL.d };
   }
 
@@ -297,7 +297,7 @@ export class WorldView {
       const v = this.chars.get(c.id);
       if (!v) continue;
       setText(t, formatTime(Math.max(0, c.expiresAt - this.wh.time)));
-      t.position.set(v.x, v.y - 62);
+      t.position.set(v.x, v.y - 80);
     }
   }
 }

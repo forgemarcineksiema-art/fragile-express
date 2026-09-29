@@ -189,10 +189,6 @@ export function drawShadow(g: Graphics, x: number, y: number, rx: number, ry: nu
 // Small character bits (the rest lives in art-people.ts)
 // ---------------------------------------------------------------------------------------------
 
-export function drawHand(g: Graphics, x: number, y: number): void {
-  g.circle(x, y, 3.6).fill(WHITE);
-}
-
 /** Speech bubble; anchor at the tip of the tail. */
 export function drawBubble(g: Graphics, x: number, y: number): void {
   g.roundRect(x - 15, y - 34, 30, 26, 9).fill(WHITE).stroke({ width: 2, color: INK, alpha: 0.35 });
