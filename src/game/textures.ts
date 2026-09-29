@@ -4,6 +4,9 @@ import type { ParcelKind } from '../sim/types.ts';
 import {
   drawArm,
   drawBubble,
+  drawCash,
+  drawCoinFace,
+  drawGlint,
   drawCap,
   drawHair,
   drawHand,
@@ -75,7 +78,10 @@ export function buildAtlas(renderer: Renderer): Atlas {
   e.push({ name: 'wheel', w: 28, h: 28, ax: 14, ay: 14, draw: (g, x, y) => drawWheel(g, x, y) });
   e.push({ name: 'hand', w: 10, h: 10, ax: 5, ay: 5, draw: (g, x, y) => drawHand(g, x, y) });
   e.push({ name: 'bubble', w: 36, h: 40, ax: 18, ay: 38, draw: (g, x, y) => drawBubble(g, x, y) });
-  e.push({ name: 'coin', w: 16, h: 13, ax: 8, ay: 6, draw: (g, x, y) => drawCoin(g, x, y) });
+  e.push({ name: 'coin', w: 20, h: 15, ax: 10, ay: 7, draw: (g, x, y) => drawCoin(g, x, y) });
+  e.push({ name: 'coin_face', w: 22, h: 22, ax: 11, ay: 11, draw: (g, x, y) => drawCoinFace(g, x, y) });
+  e.push({ name: 'glint', w: 22, h: 22, ax: 11, ay: 11, draw: (g, x, y) => drawGlint(g, x, y) });
+  e.push({ name: 'cash', w: 28, h: 22, ax: 14, ay: 20, draw: (g, x, y) => drawCash(g, x, y) });
   e.push({ name: 'shadow', w: 36, h: 16, ax: 18, ay: 8, draw: (g, x, y) => drawShadow(g, x, y, 16, 6.5) });
   e.push({ name: 'torso', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorso(g, x, y) });
   e.push({ name: 'torso_detail', w: 26, h: 24, ax: 13, ay: 22, draw: (g, x, y) => drawTorsoDetail(g, x, y) });

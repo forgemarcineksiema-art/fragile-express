@@ -10,7 +10,10 @@ import { CharacterView, HANDS_Z } from './views/character.ts';
 import { AdPadView, PadTooltip, PadView } from './views/pads.ts';
 import { ParcelLayer } from './views/parcels.ts';
 import { DockView, type VanEvent } from './views/dock.ts';
-import { BeltView, PileView, ShelfView, beltTexture, deskView, truckView } from './views/stations.ts';
+import { PileView } from './views/pile.ts';
+import { BeltView, DeskView, ShelfView, beltTexture } from './views/stations.ts';
+import { TruckView } from './views/truck.ts';
+import { propNodes } from './views/props.ts';
 import { payout } from '../sim/economy.ts';
 import type { Warehouse } from '../sim/warehouse.ts';
 
@@ -26,7 +29,9 @@ export class WorldView {
   readonly parcels: ParcelLayer;
   private readonly bg: Background;
   private readonly belts: BeltView[];
-  private readonly piles: PileView[];
+  readonly piles: PileView[];
+  private readonly trucks: TruckView[] = [];
+  readonly desk: DeskView;
   private readonly pads: PadView[];
   private readonly adPads = new Map<string, AdPadView>();
   private readonly tooltip: PadTooltip;
@@ -53,7 +58,9 @@ export class WorldView {
     const tex = beltTexture(renderer);
     this.belts = wh.belts.map((b) => {
       const v = new BeltView(b, tex);
-      this.entities.addChild(v.node, truckView(b));
+      const truck = new TruckView(b, atlas);
+      this.trucks.push(truck);
+      this.entities.addChild(v.node, truck.node, truck.worker.node, truck.worker.front, truck.held);
       return v;
     });
     this.shelves = wh.shelves.map((s) => {
@@ -73,7 +80,9 @@ export class WorldView {
       this.entities.addChild(v.node);
       return v;
     });
-    this.entities.addChild(deskView(wh));
+    this.desk = new DeskView(wh);
+    this.entities.addChild(this.desk.node);
+    for (const n of propNodes(wh.loc.props ?? [])) this.entities.addChild(n);
 
     this.pads = wh.pads.map((p) => {
       const v = new PadView(p, atlas, wh);
@@ -83,6 +92,7 @@ export class WorldView {
 
     this.parcels = new ParcelLayer(atlas, this.entities, wh);
     this.parcels.onVanLand = (d) => this.docks[d]?.kick();
+    this.parcels.spawnOrigin = (belt) => this.trucks[belt]?.handsPoint() ?? null;
     this.fx = new Fx(atlas);
     this.fx.layer.sortableChildren = true;
     this.overlay.addChild(this.fx.layer, this.parcels.timers, this.wobble);
@@ -195,6 +205,7 @@ export class WorldView {
     }
     this.bg.update();
     for (const b of this.belts) b.update(dt);
+    for (const t of this.trucks) t.update(dt, time, (x, y) => this.fx.puff(x, y));
     for (const s of this.shelves) s.update(dt);
     for (const d of this.docks) {
       d.update(
@@ -203,7 +214,8 @@ export class WorldView {
         (ev) => this.onVanEvent?.(ev, d.doorPoint.x, d.doorPoint.y),
       );
     }
-    for (const p of this.piles) p.update();
+    for (const p of this.piles) p.update(dt);
+    this.desk.update(dt);
     for (const p of this.pads) p.update(dt, time);
     this.syncAdPads(dt, time);
     this.parcels.update(dt, this.chars, this.shelves, this.docks);

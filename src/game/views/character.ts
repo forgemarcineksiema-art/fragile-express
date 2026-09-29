@@ -58,7 +58,7 @@ export class CharacterView {
     helper: boolean,
   ) {
     const role = carrier.role;
-    const seed = carrier.id * 7919;
+    const seed = Math.abs(carrier.id * 7919);
     const skin = role === 'player' ? SKINS[0]! : SKINS[seed % SKINS.length]!;
     const pants = role === 'player' ? 0x1e3a8a : PANTS[seed % PANTS.length]!;
     const hairColor = role === 'player' ? 0x5b3a1b : HAIR[(seed >> 3) % HAIR.length]!;

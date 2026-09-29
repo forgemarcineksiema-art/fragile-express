@@ -53,6 +53,8 @@ export class ParcelLayer {
   private timersDrawn = false;
   /** Called when a parcel lands inside a van (the van dips on its springs). */
   onVanLand: ((dock: number) => void) | null = null;
+  /** Where a parcel appearing on belt `i` comes from (the unloader's hands). */
+  spawnOrigin: ((belt: number) => { x: number; y: number; z: number } | null) | null = null;
 
   constructor(
     private readonly atlas: Atlas,
@@ -66,12 +68,13 @@ export class ParcelLayer {
     return v ? { x: v.x, y: v.y - v.z } : null;
   }
 
-  private onBeltStart(id: number): boolean {
+  /** Index of the belt this parcel was just put on, or -1. */
+  private beltStart(id: number): number {
     for (const b of this.wh.belts) {
       const last = b.items[b.items.length - 1];
-      if (last && last.p.id === id && last.s < 12) return true;
+      if (last && last.p.id === id && last.s < 12) return b.index;
     }
-    return false;
+    return -1;
   }
 
   private sprite(): Sprite {
@@ -166,9 +169,14 @@ export class ParcelLayer {
       if (!v) {
         const s = this.sprite();
         setTexture(s, this.atlas.get(tex));
-        // Fresh parcels at the start of a belt drop out of the truck onto it.
-        const fromTruck = tg.zi < 1e5 && this.onBeltStart(p.id);
-        v = { sprite: s, hop: p.hop, tex, x: tg.x, y: tg.y, z: tg.z + (fromTruck ? 46 : 0), fallV: 0, land: 0, fly: null };
+        // Fresh parcels on a belt are handed over by the truck's unloader (or drop in if he is busy).
+        const belt = this.beltStart(p.id);
+        const origin = belt >= 0 ? (this.spawnOrigin?.(belt) ?? null) : null;
+        if (origin) {
+          v = { sprite: s, hop: p.hop, tex, x: origin.x, y: origin.y, z: origin.z, fallV: 0, land: 0, fly: { fx: origin.x, fy: origin.y, fz: origin.z, t: 0, dur: 0.3, arc: 26 } };
+        } else {
+          v = { sprite: s, hop: p.hop, tex, x: tg.x, y: tg.y, z: tg.z + (belt >= 0 ? 46 : 0), fallV: 0, land: 0, fly: null };
+        }
         this.views.set(p.id, v);
       }
       if (v.tex !== tex) {

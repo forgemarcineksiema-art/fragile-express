@@ -76,7 +76,24 @@ body {
 }
 
 .hud-coins.bump {
-  animation: bump 0.25s ease-out;
+  animation: bump 0.22s ease-out;
+}
+
+.hud-coins.bump .coin-ico {
+  animation: coin-flip 0.3s ease-out;
+}
+
+@keyframes coin-flip {
+  0% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.2);
+    filter: brightness(1.5);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }
 
 .coin-ico {

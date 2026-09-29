@@ -199,6 +199,157 @@
       1190
     ]
   ],
+  "props": [
+    {
+      "type": "pallet_wrap",
+      "at": [
+        70,
+        130
+      ]
+    },
+    {
+      "type": "pallet_wrap",
+      "at": [
+        130,
+        130
+      ]
+    },
+    {
+      "type": "pallet_wrap",
+      "at": [
+        70,
+        190
+      ]
+    },
+    {
+      "type": "pallet_stack",
+      "at": [
+        130,
+        190
+      ]
+    },
+    {
+      "type": "forklift",
+      "at": [
+        210,
+        300
+      ]
+    },
+    {
+      "type": "forklift",
+      "at": [
+        370,
+        300
+      ],
+      "flip": true
+    },
+    {
+      "type": "rack_tall",
+      "at": [
+        330,
+        100
+      ]
+    },
+    {
+      "type": "rack_tall",
+      "at": [
+        520,
+        100
+      ]
+    },
+    {
+      "type": "vending",
+      "at": [
+        60,
+        600
+      ]
+    },
+    {
+      "type": "water_cooler",
+      "at": [
+        110,
+        600
+      ]
+    },
+    {
+      "type": "plant",
+      "at": [
+        160,
+        600
+      ]
+    },
+    {
+      "type": "bench",
+      "at": [
+        80,
+        660
+      ]
+    },
+    {
+      "type": "lockers",
+      "at": [
+        80,
+        1000
+      ]
+    },
+    {
+      "type": "bins",
+      "at": [
+        230,
+        1000
+      ]
+    },
+    {
+      "type": "lockers",
+      "at": [
+        1000,
+        96
+      ]
+    },
+    {
+      "type": "plant",
+      "at": [
+        1110,
+        96
+      ]
+    },
+    {
+      "type": "trolley",
+      "at": [
+        1000,
+        1560
+      ]
+    },
+    {
+      "type": "scale",
+      "at": [
+        1110,
+        1556
+      ]
+    },
+    {
+      "type": "cones",
+      "at": [
+        520,
+        330
+      ],
+      "solid": false
+    }
+  ],
+  "paint": [
+    [
+      40,
+      100,
+      130,
+      120
+    ],
+    [
+      150,
+      262,
+      280,
+      76
+    ]
+  ],
   "pads": [
     { "id":  "p_cap", "type":  "upgrade", "stat":  "player.capacity", "slot":  [0, 0], "unlock":  [0, 1, 3, 4, 6, 8, 10], "every":  99 },
     { "id":  "hire_sorter", "type":  "hire", "role":  "sorter", "slot":  [1, 0], "requires":  ["p_cap"], "reveal":  true },

@@ -1,9 +1,8 @@
-// Entity views for the belt, shelves, van docks, coin piles and the cash desk.
-import { Container, Graphics, Sprite, Text, TilingSprite, type Renderer, type Texture } from 'pixi.js';
-import type { Belt, CoinPile, Shelf } from '../../sim/stations.ts';
+// Entity views for the belt, shelves and the cash desk.
+import { Container, Graphics, Text, TilingSprite, type Renderer, type Texture } from 'pixi.js';
+import type { Belt, Shelf } from '../../sim/stations.ts';
 import type { Warehouse } from '../../sim/warehouse.ts';
-import { drawSymbol, drawTruck, PARCEL } from '../art.ts';
-import type { Atlas } from '../atlas.ts';
+import { drawSymbol, PARCEL } from '../art.ts';
 import { COIN, DISTRICT_COLORS, DISTRICT_SYMBOLS, INK, WHITE, shade } from '../palette.ts';
 import { label, setText } from '../text.ts';
 
@@ -60,13 +59,6 @@ export class BeltView {
     const moving = b.items.length === 0 || b.items[0]!.s < b.endS - 0.5 || b.items.length < 2;
     if (moving) this.surface.tilePosition.x += b.speed * dt;
   }
-}
-
-export function truckView(belt: Belt): Graphics {
-  const g = new Graphics();
-  drawTruck(g, belt.geom.x0 - 122, belt.geom.y);
-  g.zIndex = belt.geom.y + 50;
-  return g;
 }
 
 export class ShelfView {
@@ -157,69 +149,44 @@ export class ShelfView {
   }
 }
 
-/** Coin pile: towers of coins that grow with the value. */
-export class PileView {
+/** Cash desk with a register whose drawer pops open when the collector pays in. */
+export class DeskView {
   readonly node = new Container();
-  private coins: Sprite[] = [];
-  private shown = -1;
+  private readonly drawer = new Graphics();
+  private open = 0;
 
-  constructor(
-    private readonly pile: CoinPile,
-    private readonly atlas: Atlas,
-    private readonly unit: number,
-  ) {
-    this.node.position.set(pile.x, pile.y);
-    this.node.zIndex = pile.y;
+  constructor(wh: Warehouse) {
+    const g = new Graphics();
+    const b = wh.layout.safe.body;
+    const h = 26;
+    g.rect(b.x + 4, b.y + 6, b.w, b.h).fill({ color: 0x000000, alpha: 0.15 });
+    g.roundRect(b.x, b.y - h, b.w, b.h, 6).fill(0xb45309);
+    g.rect(b.x, b.y + b.h - h, b.w, h).fill(0x92400e);
+    g.rect(b.x, b.y + b.h - h, b.w, 3).fill({ color: WHITE, alpha: 0.2 });
+    g.roundRect(b.x, b.y - h, b.w, b.h + h, 6).stroke({ width: 1.5, color: INK, alpha: 0.3 });
+    // Register: body, display, keys
+    const cx = b.x + b.w / 2;
+    const top = b.y - h;
+    this.drawer.roundRect(cx - 17, top - 2, 34, 9, 2).fill(0x475569);
+    this.drawer.rect(cx - 13, top, 26, 4).fill(shade(COIN, 0.95));
+    const reg = new Graphics();
+    reg.roundRect(cx - 20, top - 20, 40, 22, 5).fill(0x334155);
+    reg.roundRect(cx - 14, top - 30, 28, 12, 3).fill(0x1f2937);
+    reg.roundRect(cx - 12, top - 28, 24, 8, 2).fill(0x22c55e);
+    for (let r = 0; r < 2; r++) for (let k = 0; k < 4; k++) reg.rect(cx - 15 + k * 8, top - 16 + r * 6, 6, 4).fill(0x94a3b8);
+    this.node.addChild(g, this.drawer, reg);
+    this.drawer.position.set(0, 0);
+    this.node.zIndex = b.y + b.h;
   }
 
-  update(): void {
-    const n = this.pile.value <= 0 ? 0 : Math.min(36, Math.max(1, Math.ceil(this.pile.value / this.unit)));
-    if (n === this.shown) return;
-    this.shown = n;
-    while (this.coins.length < n) {
-      const s = new Sprite(this.atlas.get('coin'));
-      this.node.addChild(s);
-      this.coins.push(s);
-    }
-    const towers = [
-      [0, 0],
-      [-15, -4],
-      [15, -3],
-      [-8, 9],
-      [9, 10],
-      [-20, 8],
-      [21, 9],
-      [0, -12],
-      [0, 18],
-    ];
-    for (let i = 0; i < this.coins.length; i++) {
-      const s = this.coins[i]!;
-      s.visible = i < n;
-      const t = towers[i % towers.length]!;
-      const level = Math.floor(i / towers.length);
-      s.position.set(t[0]!, t[1]! - level * 3.2);
-    }
-    // Draw back towers first.
-    this.coins.sort((a, b) => a.y - b.y);
-    this.coins.forEach((s, i) => this.node.setChildIndex(s, i));
+  /** Coins paid in: the drawer slides out and snaps back. */
+  pop(): void {
+    this.open = 1;
   }
-}
 
-export function deskView(wh: Warehouse): Container {
-  const c = new Container();
-  const g = new Graphics();
-  const b = wh.layout.safe.body;
-  const h = 26;
-  g.rect(b.x + 4, b.y + 6, b.w, b.h).fill({ color: 0x000000, alpha: 0.15 });
-  g.roundRect(b.x, b.y - h, b.w, b.h, 6).fill(0xb45309);
-  g.rect(b.x, b.y + b.h - h, b.w, h).fill(0x92400e);
-  g.rect(b.x, b.y + b.h - h, b.w, 3).fill({ color: WHITE, alpha: 0.2 });
-  // Cash register
-  g.roundRect(b.x + b.w / 2 - 20, b.y - h - 18, 40, 30, 5).fill(0x334155);
-  g.roundRect(b.x + b.w / 2 - 14, b.y - h - 26, 28, 12, 3).fill(0x22c55e);
-  g.rect(b.x + b.w / 2 - 12, b.y - h + 2, 24, 8).fill(shade(COIN, 0.9));
-  g.roundRect(b.x, b.y - h, b.w, b.h + h, 6).stroke({ width: 1.5, color: INK, alpha: 0.3 });
-  c.addChild(g);
-  c.zIndex = b.y + b.h;
-  return c;
+  update(dt: number): void {
+    if (this.open <= 0) return;
+    this.open = Math.max(0, this.open - dt / 0.55);
+    this.drawer.y = Math.sin(this.open * Math.PI) * 7;
+  }
 }

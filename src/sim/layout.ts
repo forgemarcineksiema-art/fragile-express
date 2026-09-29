@@ -57,6 +57,48 @@ export interface FeaturesJson {
   xxlChance: number;
 }
 
+export type PropType =
+  | 'forklift'
+  | 'pallet_wrap'
+  | 'pallet_stack'
+  | 'rack_tall'
+  | 'vending'
+  | 'water_cooler'
+  | 'bench'
+  | 'lockers'
+  | 'bins'
+  | 'cones'
+  | 'plant'
+  | 'trolley'
+  | 'scale';
+
+export interface PropJson {
+  type: PropType;
+  /** Footprint centre. */
+  at: [number, number];
+  /** Mirror (forklift faces left). */
+  flip?: boolean;
+  /** Blocks the player and worker paths (default true). */
+  solid?: boolean;
+}
+
+/** Footprint width × depth of every prop. */
+export const PROP_SIZE: Record<PropType, [number, number]> = {
+  forklift: [70, 44],
+  pallet_wrap: [50, 40],
+  pallet_stack: [50, 40],
+  rack_tall: [150, 34],
+  vending: [44, 30],
+  water_cooler: [22, 22],
+  bench: [70, 22],
+  lockers: [90, 26],
+  bins: [66, 22],
+  cones: [60, 16],
+  plant: [26, 26],
+  trolley: [30, 26],
+  scale: [50, 32],
+};
+
 export interface LocationJson {
   id: string;
   /** i18n key of the location name. */
@@ -90,6 +132,10 @@ export interface LocationJson {
   /** Extra navigation points for workers; zone centres are added automatically. */
   waypoints: [number, number][];
   obstacles?: [number, number, number, number][];
+  /** Decorative props; solid ones become obstacles. */
+  props?: PropJson[];
+  /** Hazard-painted floor areas [x, y, w, h]. */
+  paint?: [number, number, number, number][];
   pads: PadJson[];
 }
 
@@ -238,7 +284,15 @@ export function buildLayout(loc: LocationJson): Layout {
     safe: { body: safeBody, zone: safeZone, stand: { x: sx, y: safeZone.y + safeZone.h / 2 } },
     office,
     officeOrigin: origin,
-    extra: (loc.obstacles ?? []).map(([x, y, ow, oh]) => rect(x, y, ow, oh)),
+    extra: [
+      ...(loc.obstacles ?? []).map(([x, y, ow, oh]) => rect(x, y, ow, oh)),
+      ...(loc.props ?? [])
+        .filter((p) => p.solid !== false)
+        .map((p) => {
+          const [pw, pd] = PROP_SIZE[p.type];
+          return rect(p.at[0] - pw / 2, p.at[1] - pd / 2, pw, pd);
+        }),
+    ],
     waypoints: loc.waypoints.map(([x, y]) => ({ x, y })),
     spawn: { x: loc.spawn[0], y: loc.spawn[1] },
   };

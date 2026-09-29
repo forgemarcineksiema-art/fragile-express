@@ -120,12 +120,56 @@ export function drawParcel(
   g.moveTo(left, by - h).lineTo(left + w, by - h).stroke({ width: 1, color: INK, alpha: 0.25 });
 }
 
+/** Five-point star squashed vertically by `sy` (embossed on coins). */
+function starPoly(g: Graphics, x: number, y: number, r: number, sy: number, color: number, alpha: number): void {
+  const pts: number[] = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 === 0 ? r : r * 0.45;
+    pts.push(x + Math.cos(a) * rr, y + Math.sin(a) * rr * sy);
+  }
+  g.poly(pts).fill({ color, alpha });
+}
+
+/** Coin lying flat (piles). Anchor: centre of the top face. */
 export function drawCoin(g: Graphics, x: number, y: number): void {
-  g.ellipse(x, y + 2, 7, 4.2).fill(COIN_DARK);
-  g.rect(x - 7, y, 14, 2).fill(COIN_DARK);
-  g.ellipse(x, y, 7, 4.2).fill(COIN);
-  g.ellipse(x, y, 4.6, 2.6).stroke({ width: 1, color: COIN_DARK, alpha: 0.7 });
-  g.ellipse(x - 2.2, y - 1.3, 1.6, 0.9).fill({ color: COIN_LIGHT, alpha: 0.9 });
+  const rx = 8.5;
+  const ry = 5;
+  g.ellipse(x, y + 2.4, rx, ry).fill(0xb45309);
+  g.rect(x - rx, y, rx * 2, 2.4).fill(COIN_DARK);
+  g.ellipse(x, y, rx, ry).fill(COIN);
+  g.ellipse(x, y, rx * 0.72, ry * 0.72).stroke({ width: 1.1, color: COIN_DARK, alpha: 0.55 });
+  starPoly(g, x, y + 0.2, 3, 0.6, COIN_DARK, 0.5);
+  g.ellipse(x - 3.2, y - 2, 2.6, 1.1).fill({ color: COIN_LIGHT, alpha: 0.95 });
+}
+
+/** Coin seen face-on (flying coins spin by scaling it horizontally). */
+export function drawCoinFace(g: Graphics, x: number, y: number): void {
+  g.circle(x, y, 9).fill(0xb45309);
+  g.circle(x, y - 0.8, 8.4).fill(COIN);
+  g.circle(x, y - 0.8, 6).stroke({ width: 1.3, color: COIN_DARK, alpha: 0.6 });
+  starPoly(g, x, y - 0.8, 3.6, 1, COIN_DARK, 0.55);
+  g.moveTo(x - 6, y - 3).arc(x, y - 0.8, 6.4, Math.PI * 1.1, Math.PI * 1.45).stroke({ width: 1.6, color: COIN_LIGHT, cap: 'round' });
+}
+
+/** Four-point sparkle. */
+export function drawGlint(g: Graphics, x: number, y: number): void {
+  g.poly([x, y - 9, x + 1.8, y - 1.8, x + 9, y, x + 1.8, y + 1.8, x, y + 9, x - 1.8, y + 1.8, x - 9, y, x - 1.8, y - 1.8]).fill(WHITE);
+  g.circle(x, y, 2).fill(WHITE);
+}
+
+/** Bundle of banknotes (bigger payouts). Anchor: bottom centre of the front face. */
+export function drawCash(g: Graphics, x: number, by: number): void {
+  const w = 24;
+  const d = 11;
+  const h = 6;
+  g.rect(x - w / 2, by - h, w, h).fill(0x15803d);
+  for (let k = 1; k < 3; k++) g.rect(x - w / 2, by - h + k * 2, w, 0.8).fill({ color: 0xbbf7d0, alpha: 0.7 });
+  g.rect(x - w / 2, by - h - d, w, d).fill(0x4ade80);
+  g.rect(x - w / 2 + 2, by - h - d + 2, w - 4, d - 4).stroke({ width: 0.8, color: 0x166534, alpha: 0.6 });
+  g.circle(x, by - h - d / 2, 2.4).stroke({ width: 1, color: 0x166534, alpha: 0.7 });
+  g.rect(x - 2.5, by - h - d, 5, d + h).fill(0xfef3c7);
+  g.rect(x - w / 2, by - h - d, w, d + h).stroke({ width: 1, color: INK, alpha: 0.35 });
 }
 
 /** Round coin icon for HUD / pads (front view). */
@@ -325,30 +369,69 @@ export function drawVanDoors(g: Graphics, x: number, y: number): void {
   g.rect(left, y + d / 2 - VAN.h + 4, 8, VAN.h - 10).fill({ color: 0x0f172a, alpha: 0.6 });
 }
 
-/** Box truck at the start of the belt: rear to the east, open. Anchor: footprint centre. */
+export const TRUCK = { w: 230, d: 96, h: 84 };
+/** Side cargo door, relative to the truck's footprint centre (x range on the south face). */
+export const TRUCK_DOOR = { x0: TRUCK.w / 2 - 70, x1: TRUCK.w / 2 - 14 };
+
+/** Box truck at the start of the belt: cab to the west, side door open with cargo inside. */
 export function drawTruck(g: Graphics, x: number, y: number): void {
-  const w = 230;
-  const d = 96;
-  const h = 84;
+  const { w, d, h } = TRUCK;
   const left = x - w / 2;
-  g.roundRect(left - 6, y - d / 2 + 8, w + 6, d, 10).fill({ color: 0x000000, alpha: 0.2 });
-  // Cab to the west
-  g.roundRect(left, y - d / 2 - h + 22, 56, d, 10).fill(0xdc2626);
-  g.rect(left, y + d / 2 - h + 22, 56, h - 22).fill(0xb91c1c);
-  g.roundRect(left + 8, y - d / 2 - h + 28, 34, d - 14, 6).fill(0x7dd3fc);
-  // Box
-  g.roundRect(left + 50, y - d / 2 - h, w - 50, d, 6).fill(0xfafafa);
-  g.rect(left + 50, y + d / 2 - h, w - 50, h).fill(0xe5e7eb);
-  g.rect(left + 50, y + d / 2 - h + 26, w - 50, 12).fill(0xf97316);
-  g.circle(left + 112, y + d / 2 - h + 32, 14).fill(WHITE);
-  drawGlass(g, left + 112, y + d / 2 - h + 32, 18, 0xdc2626);
-  // Open rear with parcels visible
-  g.rect(left + w - 8, y - d / 2 - h + 6, 8, d + h - 12).fill(0x1f2937);
-  for (const wx of [left + 34, left + 150, left + 196]) {
-    g.ellipse(wx, y + d / 2 - 2, 15, 12).fill(0x1f2937);
-    g.ellipse(wx, y + d / 2 - 2, 7, 6).fill(0x9ca3af);
+  const sideTop = y + d / 2 - h;
+  const roofTop = y - d / 2 - h;
+  const bottom = y + d / 2 - 6;
+  g.roundRect(left + 2, y - d / 2 + 14, w - 4, d - 6, 16).fill({ color: 0x000000, alpha: 0.2 });
+  // Cab
+  g.roundRect(left, roofTop + 24, 58, d - 4, 12).fill(0xdc2626);
+  g.roundRect(left + 8, roofTop + 30, 36, d - 18, 7).fill(0x7dd3fc);
+  g.poly([left + 12, roofTop + 34, left + 20, roofTop + 34, left + 14, roofTop + d, left + 10, roofTop + d]).fill({ color: WHITE, alpha: 0.45 });
+  g.roundRect(left, sideTop + 24, 56, h - 30, 8).fill(0xb91c1c);
+  g.roundRect(left + 20, sideTop + 30, 28, 18, 4).fill(0x7dd3fc);
+  g.roundRect(left + 55, sideTop + 30, 6, 10, 2).fill(0x1f2937); // mirror
+  g.roundRect(left - 4, bottom - 9, 10, 10, 3).fill(0x475569);
+  g.circle(left + 3, sideTop + 44, 3.5).fill(0xfef08a);
+  // Cargo box: roof with ribs, side with brand stripe
+  g.roundRect(left + 52, roofTop, w - 52, d, 7).fill(0xfafafa);
+  for (let i = 1; i < 7; i++) g.rect(left + 52 + i * ((w - 52) / 7), roofTop + 4, 2, d - 8).fill({ color: 0x94a3b8, alpha: 0.28 });
+  g.rect(left + 52, sideTop, w - 52, h - 6).fill(0xe5e7eb);
+  g.rect(left + 54, sideTop, w - 56, 3).fill({ color: WHITE, alpha: 0.9 });
+  g.rect(left + 52, sideTop + 24, w - 52, 12).fill(0xf97316);
+  g.circle(left + 104, sideTop + 30, 15).fill(WHITE).stroke({ width: 2, color: 0xf97316 });
+  drawGlass(g, left + 104, sideTop + 30, 19, 0xdc2626);
+  g.rect(left + 52, bottom - 6, w - 52, 6).fill(0xcbd5e1);
+  // Side door rolled up: dark cargo space with parcels still inside (top right already unloaded)
+  const dx0 = x + TRUCK_DOOR.x0;
+  const dx1 = x + TRUCK_DOOR.x1;
+  const dTop = sideTop + 8;
+  g.rect(dx0, dTop, dx1 - dx0, bottom - dTop - 4).fill(0x111827);
+  g.rect(dx0 - 2, dTop - 6, dx1 - dx0 + 4, 7).fill(0x9ca3af);
+  g.rect(dx0 - 2, dTop - 6, dx1 - dx0 + 4, 7).stroke({ width: 1, color: INK, alpha: 0.4 });
+  const cols = [0xef4444, 0x3b82f6, 0x22c55e, 0xfacc15, 0xc08a4e, 0xa855f7];
+  const bw = (dx1 - dx0 - 6) / 3;
+  const bh = 13;
+  for (let r = 0; r < 4; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (r === 3 && c > 0) continue;
+      if (r === 2 && c === 2) continue;
+      const bx = dx0 + 3 + c * bw;
+      const by = bottom - 8 - (r + 1) * bh;
+      const col = cols[(r * 3 + c * 2) % cols.length]!;
+      g.rect(bx, by, bw - 1.5, bh - 1.5).fill(col);
+      g.rect(bx, by, bw - 1.5, 3).fill({ color: WHITE, alpha: 0.25 });
+      g.rect(bx + bw / 2 - 2.5, by, 3, bh - 1.5).fill({ color: WHITE, alpha: 0.35 });
+    }
   }
-  g.roundRect(left + 50, y - d / 2 - h, w - 50, d + h, 6).stroke({ width: 1.5, color: INK, alpha: 0.35 });
+  // Rear doors and lights (east end)
+  g.rect(left + w - 5, sideTop + 4, 5, h - 14).fill(0x9ca3af);
+  g.roundRect(left + w - 4, sideTop + 8, 5, 10, 2).fill(0xef4444);
+  // Wheels
+  for (const wx of [left + 34, left + 150, left + 196]) {
+    g.moveTo(wx - 17, bottom + 1).arc(wx, bottom + 1, 17, Math.PI, 0).closePath().fill(0x334155);
+    g.circle(wx, bottom + 4, 13).fill(0x1f2937);
+    g.circle(wx, bottom + 4, 7).fill(0xcbd5e1);
+    g.circle(wx, bottom + 4, 2.4).fill(0x475569);
+  }
+  g.roundRect(left + 52, roofTop, w - 52, d + h - 6, 7).stroke({ width: 1.5, color: INK, alpha: 0.32 });
 }
 
 // ---------------------------------------------------------------------------------------------

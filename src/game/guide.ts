@@ -106,14 +106,16 @@ export class Guide {
     // Screen-edge pointer when the target is off-screen.
     const p = cam.worldToScreen(target.x, target.y - 30);
     const m = 44;
-    const off = p.x < m || p.y < m || p.x > cam.viewW - m || p.y > cam.viewH - m;
+    // Keep the pointer below the HUD row (coin counter, pause button).
+    const top = 96;
+    const off = p.x < m || p.y < top || p.x > cam.viewW - m || p.y > cam.viewH - m;
     this.edge.visible = off;
     if (off) {
       const cx = cam.viewW / 2;
-      const cy = cam.viewH / 2;
+      const cy = (cam.viewH + top - m) / 2;
       const dx = p.x - cx;
       const dy = p.y - cy;
-      const k = Math.min((cx - m) / Math.max(1, Math.abs(dx)), (cy - m) / Math.max(1, Math.abs(dy)));
+      const k = Math.min((cam.viewW / 2 - m) / Math.max(1, Math.abs(dx)), (cam.viewH - top - m) / 2 / Math.max(1, Math.abs(dy)));
       this.edge.position.set(cx + dx * k, cy + dy * k);
       this.edge.rotation = Math.atan2(dy, dx) - Math.PI / 2;
       this.edge.scale.set(0.9 + Math.sin(this.bob * 6) * 0.08);

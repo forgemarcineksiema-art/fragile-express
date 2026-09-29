@@ -24,6 +24,8 @@ export class Belt {
   /** Front (closest to the end) first. */
   items: BeltItem[] = [];
   spawnT = 0.4;
+  /** Kind and district of the parcel that comes out of the truck next. */
+  next: { kind: import('./types.ts').ParcelKind; district: number } | null = null;
 
   constructor(index: number, geom: BeltGeom, baseInterval: number, speed: number, maxItems: number) {
     this.index = index;

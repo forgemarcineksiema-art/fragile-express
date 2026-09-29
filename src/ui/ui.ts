@@ -82,14 +82,33 @@ export class UI {
     return this.screenOpen;
   }
 
+  private targetCoins = 0;
+  private rolling = -1;
+
+  /** Sets the coin total; the counter rolls toward it (see update). */
   setCoins(v: number): void {
-    const n = Math.floor(v);
-    if (n === this.shownCoins) return;
-    if (n > this.shownCoins && this.shownCoins >= 0) {
-      this.coins.classList.remove('bump');
-      void this.coins.offsetWidth;
-      this.coins.classList.add('bump');
+    this.targetCoins = Math.floor(v);
+    if (this.rolling < 0) this.rolling = this.targetCoins;
+  }
+
+  /** Coin arrived at the counter: bump and sparkle. */
+  bumpCoin(): void {
+    this.coins.classList.remove('bump');
+    void this.coins.offsetWidth;
+    this.coins.classList.add('bump');
+  }
+
+  update(dt: number): void {
+    const target = this.targetCoins;
+    if (this.rolling !== target) {
+      const diff = target - this.rolling;
+      // Count up visibly, but never take more than ~0.7 s; spending drops faster.
+      const rate = diff > 0 ? 4.5 : 10;
+      const step = diff * Math.min(1, dt * rate);
+      this.rolling = Math.abs(diff) < 1 ? target : this.rolling + (Math.abs(step) < 1 ? Math.sign(diff) : step);
     }
+    const n = Math.floor(this.rolling);
+    if (n === this.shownCoins) return;
     this.shownCoins = n;
     this.coinValue.textContent = formatCoins(n);
   }

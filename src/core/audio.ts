@@ -17,6 +17,8 @@ export type SfxName =
   | 'turbo'
   | 'reverse'
   | 'brake'
+  | 'clink'
+  | 'cash'
   | 'error';
 
 type Wave = OscillatorType;
@@ -126,7 +128,7 @@ export class AudioEngine {
     if (!this.ctx || !this.sfxOn || this.ctx.state !== 'running') return;
     // Throttle very frequent sounds.
     const now = this.ctx.currentTime;
-    const minGap = name === 'pay' ? 0.07 : name === 'pick' || name === 'drop' ? 0.03 : 0.015;
+    const minGap = name === 'pay' ? 0.07 : name === 'pick' || name === 'drop' ? 0.03 : name === 'clink' ? 0.035 : 0.015;
     if ((this.last[name] ?? -1) > now - minGap) return;
     this.last[name] = now;
     const up = Math.pow(2, pitch / 12);
@@ -186,6 +188,16 @@ export class AudioEngine {
       case 'turbo':
         this.tone(220, 0.5, 'sawtooth', 0.1, 0, 1760);
         this.tone(440, 0.5, 'square', 0.05, 0.05, 1760);
+        break;
+      case 'clink':
+        this.tone(2200 * up, 0.05, 'triangle', 0.08);
+        this.tone(3300 * up, 0.07, 'sine', 0.05, 0.01);
+        break;
+      case 'cash':
+        this.hiss(0.06, 0.12, 3000, 1.2);
+        this.tone(1568, 0.09, 'square', 0.08, 0.04);
+        this.tone(2093, 0.28, 'square', 0.07, 0.12);
+        this.tone(2637, 0.3, 'sine', 0.05, 0.12);
         break;
       case 'reverse':
         for (let i = 0; i < 3; i++) this.tone(1040, 0.09, 'square', 0.05, i * 0.26);

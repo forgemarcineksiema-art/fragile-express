@@ -124,6 +124,65 @@
       560
     ]
   ],
+  "props": [
+    {
+      "type": "lockers",
+      "at": [
+        140,
+        96
+      ]
+    },
+    {
+      "type": "bench",
+      "at": [
+        290,
+        100
+      ]
+    },
+    {
+      "type": "water_cooler",
+      "at": [
+        445,
+        95
+      ]
+    },
+    {
+      "type": "scale",
+      "at": [
+        820,
+        96
+      ]
+    },
+    {
+      "type": "plant",
+      "at": [
+        1190,
+        95
+      ]
+    },
+    {
+      "type": "plant",
+      "at": [
+        1190,
+        815
+      ]
+    },
+    {
+      "type": "trolley",
+      "at": [
+        560,
+        805
+      ]
+    },
+    {
+      "type": "pallet_stack",
+      "at": [
+        760,
+        805
+      ]
+    }
+  ],
+  "paint": [],
   "pads": [
     { "id":  "p_cap", "type":  "upgrade", "stat":  "player.capacity", "slot":  [0, 0], "unlock":  [0, 2, 3, 4, 6], "every":  99 },
     { "id":  "district1", "type":  "district", "district":  1, "at":  [650, 560], "requires":  ["p_cap"], "c0":  130 },

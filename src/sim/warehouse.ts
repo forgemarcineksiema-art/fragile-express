@@ -414,8 +414,11 @@ export class Warehouse {
     for (const b of this.belts) {
       b.move(dt);
       b.spawnT -= dt;
+      // The next parcel is decided in advance so the unloader can already hold it.
+      if (!b.next) b.next = { kind: this.rollKind(), district: this.randomDistrict() };
       if (b.spawnT <= 0 && b.canSpawn()) {
-        const p = this.makeParcel(this.rollKind(), this.randomDistrict());
+        const p = this.makeParcel(b.next.kind, b.next.district);
+        b.next = null;
         b.push(p);
         b.spawnT = beltInterval(b.baseInterval, level);
         this.events.push({ type: 'spawn', parcel: p.id, belt: b.index });

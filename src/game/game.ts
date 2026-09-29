@@ -1,6 +1,7 @@
 // Game: owns the Pixi app, the simulation of the current location, the views, UI, audio, saving and
 // every Poki flow (gameplay events, commercial and rewarded breaks).
 import { Application, Container, Sprite, Texture } from 'pixi.js';
+import { ScreenCoins } from './fx.ts';
 import { Sound, type SfxName } from '../core/audio.ts';
 import { detectLanguage, setLanguage, t } from '../core/i18n.ts';
 import { readJson, writeJson } from '../core/storage.ts';
@@ -35,6 +36,7 @@ export class Game {
   private readonly camera = new Camera();
   private readonly screenLayer = new Container();
   private vignette: Sprite | null = null;
+  private coinTrail!: ScreenCoins;
   private wh!: Warehouse;
   private world!: WorldView;
   private guide!: Guide;
@@ -99,6 +101,8 @@ export class Game {
     setLanguage(this.data.settings.lang ?? detectLanguage(navigator.languages ?? [navigator.language]));
 
     this.vignette = makeVignette();
+    this.coinTrail = new ScreenCoins(this.atlas);
+    this.screenLayer.addChild(this.coinTrail.layer);
     this.app.stage.addChild(this.vignette, this.screenLayer);
     const locId = LOCATIONS[this.data.current.loc] ? this.data.current.loc : FIRST_LOCATION;
     const hasSave = this.data.t > 0;
@@ -353,6 +357,8 @@ export class Game {
     const hint = this.guide.update(dt, wh, this.world, this.camera);
     this.ui.setHint(this.state === 'play' ? hint : null);
     this.ui.setCoins(wh.coins);
+    this.ui.update(dt);
+    this.coinTrail.update(dt);
     this.ui.setTurbo(wh.turboActive() ? wh.turboUntil - wh.time : null);
   }
 
@@ -406,25 +412,43 @@ export class Game {
           break;
         }
         case 'coinsDropped': {
-          const pile = wh.piles.find((p) => p.id === e.pile)!;
-          const door = world.docks[wh.piles.indexOf(pile)]!.doorPoint;
-          world.fx.coins(door.x, door.y, 6, () => ({ x: pile.x, y: pile.y }));
-          world.fx.float(pile.x, pile.y - 40, `+${formatCoins(e.amount)}`, 0xfde047, 22);
+          // The payout rains out of the van onto the pile; the pile grows as coins land.
+          const idx = wh.piles.findIndex((p) => p.id === e.pile);
+          const pile = wh.piles[idx]!;
+          const door = world.docks[idx]!.doorPoint;
+          const n = Math.min(16, Math.max(5, Math.round(e.amount / (5 * wh.loc.multiplier))));
+          const view = world.piles[idx]!;
+          world.fx.coinRain(door.x + 6, door.y + 4, 34, pile.x, pile.y, n, () => view.land(e.amount / n), () => this.sfx('clink', Math.random() * 4));
+          const turbo = wh.turboActive();
+          world.fx.payout(pile.x, pile.y - 46, `+${formatCoins(e.amount)}${turbo ? ' ×2' : ''}`, turbo ? 0xc4b5fd : 0xfde047);
+          this.sfx('cash');
           break;
         }
         case 'collect': {
           if (!isPlayer(e.carrier)) break;
+          // Coins jump off the floor and fly into the counter at the top of the screen.
           const pile = wh.piles.find((p) => p.id === e.pile)!;
+          const units = Math.round(e.amount / (5 * wh.loc.multiplier));
+          world.fx.pickupBurst(pile.x, pile.y, 6);
+          const from = this.camera.worldToScreen(pile.x, pile.y - 10);
+          const to = this.ui.coinTarget();
+          const n = Math.min(16, Math.max(5, units));
+          this.coinTrail.fly(from.x, from.y, to.x, to.y, n, (i) => {
+            this.ui.bumpCoin();
+            this.sfx('clink', Math.min(12, i));
+          });
+          world.fx.payout(wh.player.x, wh.player.y - 96, `+${formatCoins(e.amount)}`);
           this.sfx('coin');
-          world.fx.coins(pile.x, pile.y, Math.ceil(e.amount / (5 * wh.loc.multiplier)), () => ({ x: wh.player.x, y: wh.player.y - 20 }));
-          world.fx.float(wh.player.x, wh.player.y - 80, `+${formatCoins(e.amount)}`, 0xfde047, 24);
           break;
         }
         case 'deposit': {
           world.say(e.carrier, '$');
           const s = wh.layout.safe.stand;
-          world.fx.float(s.x, s.y - 70, `+${formatCoins(e.amount)}`, 0xfde047, 20);
-          this.sfx('coin', -5);
+          const c = world.chars.get(e.carrier);
+          const b = wh.layout.safe.body;
+          if (c) world.fx.coinRain(c.x, c.y, 30, b.x + b.w / 2, b.y + 6, 6, () => world.desk.pop(), () => this.sfx('clink', 2));
+          world.fx.payout(s.x, s.y - 78, `+${formatCoins(e.amount)}`);
+          this.sfx('cash');
           break;
         }
         case 'purchase': {

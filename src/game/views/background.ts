@@ -8,6 +8,7 @@ import { drawGlass } from '../art.ts';
 import type { Atlas } from '../atlas.ts';
 import { DISTRICT_COLORS, INK, THEMES, WHITE, shade, type Theme } from '../palette.ts';
 import { FONT } from '../text.ts';
+import { drawHatch } from './props.ts';
 
 export const WORLD_MARGIN = { left: 250, right: 330, top: 170, bottom: 90 };
 const WALL_H = 96;
@@ -201,6 +202,8 @@ export class Background {
       const y = BACK_WALL + 20 + rnd() * (L.h - BACK_WALL - WALL - 30);
       g.ellipse(x, y, 4 + rnd() * 10, 2 + rnd() * 4).fill({ color: 0x000000, alpha: 0.03 });
     }
+    // Hazard-painted areas (forklift parking, storage corners).
+    for (const [px, py, pw, ph] of this.wh.loc.paint ?? []) drawHatch(g, px, py, pw, ph);
     // Sunlight falling through the windows.
     for (const x of windowXs(L)) {
       g.poly([x + 4, BACK_WALL, x + 88, BACK_WALL, x + 150, BACK_WALL + 150, x + 66, BACK_WALL + 150]).fill({ color: 0xfffbeb, alpha: 0.13 });
