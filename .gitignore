@@ -4,3 +4,5 @@ dist/
 .vite/
 coverage/
 promo/_*
+__pycache__/
+Fragile Express — dokument projektowy.md

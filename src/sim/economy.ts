@@ -1,9 +1,9 @@
 // Economy formulas and tuning values. Everything the pacing simulator tunes lives here or in locations/*.json.
 import type { ParcelKind, WorkerRole } from './types.ts';
 
-/** Payout base: W = BASE_PAYOUT Ă— M_lok Ă— kind multiplier. */
+/** Payout base: W = BASE_PAYOUT × M_lok × kind multiplier. */
 export const BASE_PAYOUT = 5;
-/** Cost growth per level: C_k = C0 Ă— COST_GROWTH^k. */
+/** Cost growth per level: C_k = C0 × COST_GROWTH^k. */
 export const COST_GROWTH = 1.35;
 
 export const KIND_MULT: Record<ParcelKind, number> = {

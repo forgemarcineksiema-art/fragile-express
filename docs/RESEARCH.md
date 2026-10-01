@@ -1,115 +1,116 @@
-# Research: najlepsze praktyki w grach idle arcade (web i mobile)
+# Research: best practices in idle arcade games (web and mobile)
 
-Wrzesień 2026. Cztery równoległe przeglądy (ok. 350 wyszukiwań i pobranych stron): design gatunku,
-wymagania Poki i technika webowa, monetyzacja i retencja na mobile, UX i skargi graczy. Źródła
-pierwotne tam, gdzie się dało (dokumentacja Poki i CrazyGames, blogi wydawców), do tego rozbiory gier
-robione przez osoby trzecie (arpubrothers, Azur Games, Udonis, Gamigion) i recenzje ze sklepów (przez
-agregatory, więc liczby są przybliżone). Wnioski własne są oznaczone jako takie.
+September 2026. Four parallel reviews (about 350 searches and fetched pages): genre design, Poki
+requirements and web tech, mobile monetisation and retention, UX and player complaints. Primary sources
+where possible (Poki and CrazyGames documentation, publisher blogs), plus third-party game breakdowns
+(arpubrothers, Azur Games, Udonis, Gamigion) and store reviews (through aggregators, so the numbers are
+approximate). My own conclusions are marked as such.
 
-## Najważniejsze liczby
+## Key numbers
 
-| Co | Wartość | Źródło |
+| What | Value | Source |
 |---|---|---|
-| Poki, test na 500 graczach | średnio ≥ 3 min gry i ≥ 25% sesji dłuższych niż 3 min | developers.poki.com/guide/player-fit-test |
-| Poki, cel | ≥ 65% wejść kończy się grą; ≥ 10 min dla gier zarządzania (średnia Poki: 70% i 6 min) | developers.poki.com/guide/how-testing-works |
-| Poki, udane gry | sesje 11–20 min | pocketgamer.biz (wywiad z COO Poki) |
-| Czas ładowania | Stickman Hook: 29,5 s → 3,7 s podniosło konwersję z 50% do 72%; każdy MB to kilka % graczy mniej | poki.com/blog/what-makes-high-quality-browser-game |
-| Top-20 idle arcade (mobile) | D1 48–52%, D7 7–13%, ok. 25 min gry pierwszego dnia | Sensor Tower i Homa (gamedevreports) |
-| Monkey Mart (web) | pierwszy sklep 20–25 min, gracz ma „wsiąknąć” w 5–10 min; łagodniejsza krzywa niż na mobile | defold.com/2023/03/22/Monkey-Mart-is-bananas |
-| My Perfect Hotel, 1. sesja | zatrudnianie 1:46, pierwszy sprzątacz 4:20, automatyczna recepcja 9:26, poziom hotelu ok. 12:00 | arpubrothers.com |
+| Poki, test on 500 players | on average ≥ 3 min of play and ≥ 25% of sessions longer than 3 min | developers.poki.com/guide/player-fit-test |
+| Poki, target | ≥ 65% of visits turn into play; ≥ 10 min for management games (Poki average: 70% and 6 min) | developers.poki.com/guide/how-testing-works |
+| Poki, successful games | 11–20 min sessions | pocketgamer.biz (interview with Poki's COO) |
+| Loading time | Stickman Hook: 29.5 s → 3.7 s raised conversion from 50% to 72%; every MB costs a few % of players | poki.com/blog/what-makes-high-quality-browser-game |
+| Top 20 idle arcade (mobile) | D1 48–52%, D7 7–13%, about 25 min of play on day one | Sensor Tower and Homa (gamedevreports) |
+| Monkey Mart (web) | first shop 20–25 min, the player should be "hooked" within 5–10 min; a gentler curve than on mobile | defold.com/2023/03/22/Monkey-Mart-is-bananas |
+| My Perfect Hotel, 1st session | hiring 1:46, first cleaner 4:20, automated reception 9:26, hotel level about 12:00 | arpubrothers.com |
 
-Nasze tempo z symulatora (pierwsza dzielnica 1:15, pierwszy pracownik 3:00, automatyzacja ok. 9 min,
-następna lokacja ok. 20 min) mieści się w widełkach gatunku. Paczka ok. 800 KB (160 KB gzip JS) jest
-wzorcowa pod względem ładowania.
+Our pacing from the simulator (first district 1:15, first worker 3:00, automation about 9 min, next
+location about 20 min) sits within the genre's range. A bundle of about 800 KB (160 KB gzipped JS) is
+exemplary for loading.
 
-## Co już robimy zgodnie z praktyką (sprawdzone w kodzie)
+## What we already do in line with practice (checked in the code)
 
-- Brak ekranu tytułowego, gracz od razu gra; samouczek wizualny (strzałka) zamiast ścian tekstu.
-- `gameplayStart` przy pierwszym ruchu, `gameplayStop` na pauzie i ekranach; pauza pod Esc, Spacją i P;
-  klawisze po `KeyboardEvent.code` (działa na AZERTY); strzałki i spacja nie przewijają strony.
-- Nagradzane reklamy jako pola w świecie (turbo ×2, pomocnik) i ×2 zarobków offline; przyciski nie są
-  zielone, mają 🎬, zwykła opcja jest tak samo duża.
-- Pływający joystick z martwą strefą i bazą idącą za palcem; lekkie wychylenie = ostrożny chód.
-- Kamera pokazuje nowo odblokowane pola; przy wysokim stosie oddala się, żeby było go widać w całości.
-- Dzielnice mają kolor i symbol (daltoniści); zapis w `localStorage` w try/catch, zapis przy ukryciu karty
-  i `pagehide`; zarobki offline z limitem 2 h.
-- Kruche paczki pojawiają się dopiero po 3 minutach, gdy podstawowa pętla jest opanowana.
-- Pion na telefonach działa, napisy są powiększone, róg z przyciskiem Poki jest wolny.
-- 10 języków (EFIGS, turecki, rosyjski, portugalski, polski, niderlandzki); miniatury 1080×1080 bez tekstu,
-  animowana 5 s w 60 kl./s; stały krok symulacji (działa tak samo przy 144 Hz).
+- No title screen, the player plays straight away; a visual tutorial (an arrow) instead of walls of text.
+- `gameplayStart` on the first move, `gameplayStop` on pause and screens; pause on Esc, Space and P;
+  keys by `KeyboardEvent.code` (works on AZERTY); arrows and space do not scroll the page.
+- Rewarded ads as zones in the world (turbo ×2, helper) and ×2 offline earnings; the buttons are not
+  green, they carry 🎬, and the plain option is the same size.
+- A floating joystick with a dead zone and a base that follows the finger; a slight tilt = careful walk.
+- The camera shows newly unlocked pads; with a tall stack it pulls back so the whole stack is visible.
+- Districts have a colour and a symbol (colour-blind players); saving to `localStorage` in try/catch,
+  saving on tab hide and `pagehide`; offline earnings capped at 2 h.
+- Fragile parcels only appear after 3 minutes, once the basic loop is learned.
+- Portrait on phones works, labels are enlarged, the corner with the Poki button is kept clear.
+- 10 languages (EFIGS, Turkish, Russian, Portuguese, Polish, Dutch); 1080×1080 thumbnails without text,
+  an animated 5 s one at 60 fps; a fixed simulation step (behaves the same at 144 Hz).
 
-## Naprawione od razu (niezgodności z Poki i ryzyka techniczne)
+## Fixed immediately (Poki mismatches and technical risks)
 
-- **Własny licznik reklam** („nie w pierwszych 5 minutach”) usunięty: Poki sam decyduje o częstotliwości;
-  przerwa reklamowa nie jest też wywoływana przy starcie gry (okno zarobków offline).
-- **Komunikat „reklama niedostępna”** usunięty: Poki wymaga, żeby przy nieudanej reklamie nie było ani
-  nagrody, ani komunikatu.
-- **Utrata kontekstu WebGL** (częsta na telefonach przy przełączaniu aplikacji): atlas tekstur żył tylko na
-  GPU i po odzyskaniu kontekstu postacie i paczki znikały. Teraz ma kopię na canvasie i wraca
-  (sprawdzone przez `WEBGL_lose_context`).
-- **Dźwięk na iOS**: odblokowanie także na `pointerup`/`touchend`/`keydown` (na dotyku `pointerdown` nie
-  jest gestem użytkownika) i wznawianie ze stanu „interrupted”.
-- **Ostrożny chód bez trzymania klawisza**: przełącznik C obok Shift (zalecenie dostępności; trzymanie
-  klawisza męczy).
-- Drobny losowy rozrzut wysokości powtarzanych dźwięków (mniej męczy ucho).
+- **Our own ad timer** ("not in the first 5 minutes") removed: Poki decides on frequency itself; a
+  commercial break is also not requested at game start (the offline earnings window).
+- **The "ad unavailable" message** removed: Poki requires that a failed ad gives neither a reward nor a
+  message.
+- **WebGL context loss** (common on phones when switching apps): the texture atlas lived only on the GPU,
+  and after the context was restored the characters and parcels vanished. Now it keeps a canvas copy and
+  comes back (checked with `WEBGL_lose_context`).
+- **Sound on iOS**: unlocking also on `pointerup`/`touchend`/`keydown` (on touch, `pointerdown` is not a
+  user gesture) and resuming from the "interrupted" state.
+- **Careful walk without holding a key**: a C toggle next to Shift (an accessibility recommendation;
+  holding a key is tiring).
+- A small random pitch spread on repeated sounds (less tiring for the ear).
 
-## Rekomendacje dla Fragile Express
+## Recommendations for Fragile Express
 
-### P1: największy wpływ na czas gry i powroty
+### P1: biggest effect on playtime and returns
 
-Punkty 1–3 są już wdrożone (zob. raport, ósma runda).
+Points 1–3 are already implemented (see the report, eighth round).
 
-1. **Praca, która zostaje graczowi po automatyzacji.** W hitach gracz ma zawsze coś „swojego”: goście VIP
-   (My Perfect Hotel), roboty do ładowania co 3 min (Pizza Ready), budzenie pracowników (Monkey Mart). U nas
-   pracownicy robią wszystko, łącznie z kruchymi paczkami, więc między automatyzacją (ok. 9 min) a
-   przeprowadzką (ok. 20 min) gra robi się pasywna. Propozycja: kruche ×3 i ekspresowe zostają graczowi
-   (pracownicy je omijają), co wzmacnia nasz wyróżnik. Wymaga przestrojenia tempa w symulatorze.
-2. **Pasek postępu lokacji** („Poczta 9/14”) i świętowanie każdego etapu. Burger Please dodał paski
-   postępu (razem z innymi zmianami D1 wzrosło z 44% do 50%); gracze chcą widzieć, ile brakuje do celu.
-3. **Stały „następny cel” po samouczku i podpowiedzi wąskich gardeł** („Vany czekają: zatrudnij
-   ładowacza”, „Regał pełny”). Kolibri podniósł retencję kontekstowymi podpowiedziami wskazującymi wąskie
-   gardło. Mamy tylko strzałkę do stać-nas-na-to kamieni milowych.
-4. **Nagradzane reklamy w momencie potrzeby.** Najczęściej oglądana w My Perfect Hotel jest paczka
-   gotówki leżąca w świecie. Propozycje: „paczka gotówki”, gdy gracz stoi na polu, na które go nie stać;
-   „folia bąbelkowa” (3 min bez chybotania kruchych paczek, gra naszym wyróżnikiem); powrót pola po
-   60–120 s. Poki zaleca oferować nagrodę wtedy, gdy jest potrzebna, i pilnować balansu.
-5. **Więcej naturalnych pauz na przerwy reklamowe.** Poki na miękkim starcie oczekuje co najmniej jednej
-   reklamy na aktywnego gracza dziennie; u nas przerwa zdarza się głównie przy przeprowadzce. Naturalne
-   miejsce: krótki ekran podsumowania po ukończeniu etapu lokacji (z punktu 2) z przyciskiem „Dalej”.
+1. **Work left for the player after automation.** In the hits the player always has something of their
+   own: VIP guests (My Perfect Hotel), robots to load every 3 min (Pizza Ready), waking workers up (Monkey
+   Mart). Here workers do everything, fragile parcels included, so between automation (about 9 min) and
+   moving on (about 20 min) the game turns passive. Proposal: fragile ×3 and express parcels stay with
+   the player (workers skip them), which strengthens what makes us different. Needs pacing retuned in the
+   simulator.
+2. **A location progress bar** ("Post office 9/14") and a celebration of every stage. Burger Please added
+   progress bars (together with other changes D1 rose from 44% to 50%); players want to see how far the
+   goal is.
+3. **A permanent "next goal" after the tutorial and bottleneck hints** ("Vans are waiting: hire a
+   loader", "Rack full"). Kolibri raised retention with contextual hints pointing at the bottleneck. We
+   only have an arrow to affordable milestones.
+4. **Rewarded ads at the moment of need.** The most watched one in My Perfect Hotel is a cash bundle
+   lying in the world. Proposals: a "cash parcel" when the player stands on a pad they cannot afford;
+   "bubble wrap" (3 min with no fragile wobble, playing on our hook); the zone returning after 60–120 s.
+   Poki recommends offering a reward when it is needed, and keeping the balance in check.
+5. **More natural pauses for commercial breaks.** On a soft launch Poki expects at least one ad per active
+   player per day; here a break happens mainly when moving location. A natural spot: a short summary
+   screen after a location stage is completed (from point 2) with a "Continue" button.
 
-### P2: głębia i powody do powrotu
+### P2: depth and reasons to come back
 
-6. **3 zadania dzienne i 7-dniowy kalendarz** liczący dni obecności (bez zerowania serii), nagroda dnia 7
-   duża, podwajana reklamą (Supersonic, My Perfect Hotel). Zadania oparte na naszym wyróżniku: „dowieź 10
-   kruchych bez stłuczki”, „5 ekspresów na czas”.
-7. **Kosmetyki**: czapki i kamizelki kuriera, malowanie vanów; za kamienie milowe, dzień 7 kalendarza,
-   reklamy (Monkey Mart ma 20+ czapek, Poki poleca kosmetyki jako cele).
-8. **Więcej treści**: 5+ lokacji, każda z nowym typem przesyłek (chłodnia, gabaryty), lekki prestiż
-   („gwiazdki franczyzy” jako mnożnik), okresowe wydarzenie. Poki promuje gry, które są aktualizowane.
-9. **Ulepszenie „nocna zmiana”**: limit zarobków offline 2 → 4 → 8 h (limit jest powodem, żeby wracać).
+6. **3 daily tasks and a 7-day calendar** counting days present (no streak reset), a big day-7 reward
+   doubled by an ad (Supersonic, My Perfect Hotel). Tasks built on our hook: "deliver 10 fragile parcels
+   without a break", "5 express parcels on time".
+7. **Cosmetics**: courier caps and vests, van liveries; for milestones, day 7 of the calendar, ads
+   (Monkey Mart has 20+ hats, Poki recommends cosmetics as goals).
+8. **More content**: 5+ locations, each with a new parcel type (cold storage, oversized), light prestige
+   ("franchise stars" as a multiplier), a periodic event. Poki promotes games that get updated.
+9. **A "night shift" upgrade**: offline earnings cap 2 → 4 → 8 h (the cap is a reason to come back).
 
-### P3: szlif
+### P3: polish
 
-10. Haptyka na Androidzie (10–20 ms przy zakupie i stłuczce, z przełącznikiem; iOS Safari tego nie obsługuje).
-11. `prefers-reduced-motion`: wyłączenie wstrząsu kamery.
-12. Opcja stałego joysticka (prośby w recenzjach Monkey Mart).
-13. Słabe telefony: wyłączony antialias na mobile, test na tanim Androidzie i Chromebooku 4 GB, `BitmapText`
-    dla często zmienianych liczników.
-14. Opcjonalnie `PokiSDK.movePill()` zamiast przesuwania licznika monet; czcionki CJK przy rozszerzaniu
-    języków.
+10. Haptics on Android (10–20 ms on purchase and break, with a toggle; iOS Safari does not support it).
+11. `prefers-reduced-motion`: turn camera shake off.
+12. An option for a fixed joystick (requested in Monkey Mart reviews).
+13. Weak phones: antialias off on mobile, a test on a cheap Android and a 4 GB Chromebook, `BitmapText`
+    for frequently changing counters.
+14. Optionally `PokiSDK.movePill()` instead of moving the coin counter; CJK fonts when adding languages.
 
-## Czego unikać (najczęstsze skargi graczy)
+## What to avoid (the most common player complaints)
 
-- Częste reklamy pełnoekranowe (skarga numer jeden we wszystkich tytułach) i reklamy blokujące postęp.
-- Nagłe ściany cenowe (np. skok z 5 tys. na 80 tys. w My Perfect Hotel).
-- Pracownicy, którzy stoją z pełnymi rękami, blokują się albo wymagają ciągłego pilnowania.
-- Wolny chód na starcie, małe udźwigi, długie trasy między stanowiskami.
-- Utrata postępu i nieudane zapisy.
-- Wymuszone ruchy kamery (My Perfect Hotel); nasze pokazy nowych pól trwają 2,4 s i blokują sterowanie
-  tylko na 0,4 s, niech tak zostanie.
-- Monotonia: każda lokacja jako ta sama pętla bez nowego elementu.
+- Frequent full-screen ads (the number one complaint across all titles) and ads that block progress.
+- Sudden price walls (e.g. a jump from 5k to 80k in My Perfect Hotel).
+- Workers who stand with full hands, get stuck or need constant supervision.
+- Slow walking at the start, small carry capacity, long routes between stations.
+- Lost progress and failed saves.
+- Forced camera moves (My Perfect Hotel); our reveals of new pads last 2.4 s and only block controls for
+  0.4 s, so keep it that way.
+- Monotony: every location as the same loop with nothing new.
 
-## Główne źródła
+## Main sources
 
 - Poki: developers.poki.com/guide/ (requirements-quality, sdk-overview, monetization, engagement,
   easy-access, how-testing-works, player-fit-test, web-fit-test, release-process, accounts, localization,
@@ -118,17 +119,17 @@ Punkty 1–3 są już wdrożone (zob. raport, ósma runda).
 - CrazyGames: docs.crazygames.com (requirements/technical, requirements/ads, resources/basic-launch-metrics,
   resources/midgame-ads-pacing)
 - Monkey Mart: defold.com/2023/03/22/Monkey-Mart-is-bananas/; poki.com/en/g/monkey-mart
-- Rozbiory: arpubrothers.com/blog/burger-please-deconstruction-of-the-game/,
+- Breakdowns: arpubrothers.com/blog/burger-please-deconstruction-of-the-game/,
   arpubrothers.com/blog/my-perfect-hotel-arcade-idle-deconstruction/,
   pocketgamer.biz/under-the-hood-deconstructing-the-top-hypercasual-games/,
   gamigion.com/pizza-ready-by-supercent-comprehensive-breakdown/, blog.udonis.co (Burger Please, My Perfect Hotel)
-- Wydawcy i benchmarki: supersonic.com/learn/blog/how-to-ideate-and-build-a-profitable-idle-arcade-game/,
+- Publishers and benchmarks: supersonic.com/learn/blog/how-to-ideate-and-build-a-profitable-idle-arcade-game/,
   supersonic.com/learn/blog/getting-started-with-basic-hybrid-casual-liveops,
   gameanalytics.com/blog/making-a-hit-idle-game-eight-lessons-from-kolibri-games,
   gamedevreports.substack.com/p/sensor-tower-and-homa-games-arcade,
   unity.com/blog/understanding-the-impact-of-rewarded-ads-on-iap-retention-and-engagement
-- UX i dostępność: developer.apple.com/design/human-interface-guidelines/game-controls,
+- UX and accessibility: developer.apple.com/design/human-interface-guidelines/game-controls,
   gameaccessibilityguidelines.com/full-list/, github.com/yoannmoinet/nipplejs,
   developer.android.com/develop/ui/views/haptics/haptics-principles
-- Technika: webkit.org/blog/10218/, webkit.org/blog/14403/,
+- Tech: webkit.org/blog/10218/, webkit.org/blog/14403/,
   developer.chrome.com/docs/web-platform/page-lifecycle-api, github.com/pixijs/pixijs/pull/12170

@@ -1,191 +1,195 @@
-# Fragile Express — dokument projektowy
+# Fragile Express — design document
 
 Sep 28, 2026 · @Marcin
 
-## Koncepcja i hook
+> The original design document, translated from Polish. It describes the plan at the start of the
+> project; what changed since then (XXL rules, courier orders, franchise prestige, ad flows and more) is
+> recorded in [REPORT.md](REPORT.md).
 
-Fragile Express to tycoon w stylu Monkey Mart: prowadzisz sortownię paczek, nosisz je w stosie z taśmy na regały i do vanów, a potem automatyzujesz wszystko pracownikami i maszynami.
+## Concept and hook
 
-- **Hook:** kruche paczki płacą trzy razy więcej, ale pękają, gdy niesiesz ich więcej niż trzy albo biegniesz. Ta sama zabawa ryzykiem co w Fragile Van, tylko w innym gatunku.
-- **Luka na Poki:** kategorie tycoon i idle są pełne gier z jedzeniem, sklepów, kopalni i farm, ale nie ma w nich sortowni ani firmy kurierskiej. Na telefonach ten motyw ma kilka sprawdzonych gier, więc pętla jest znana, a temat na Poki świeży ([Idle](https://poki.com/en/idle), [Tycoon](https://poki.com/en/tycoon)).
-- **Wspólna marka:** ten sam van, te same paczki i ta sama nazwa "Fragile" co w pierwszej grze. Gracze szukający marki w Google to ruch, z którego zarobek w całości zostaje u nas ([Deal Types](https://sdk.poki.com/deals)).
-- **Odbiorca:** 8–16 lat i casualowi dorośli. Satysfakcja z rosnących stosów paczek, wypełniających się regałów i odjeżdżających vanów.
-- **Rola w portfolio:** główna gra na pieniądze. Najdłuższe sesje, najwięcej naturalnych miejsc na rewarded, gracze wracają do zapisanego magazynu.
+Fragile Express is a tycoon in the style of Monkey Mart: you run a parcel sorting depot, carry parcels in a stack from the belt to the racks and into the vans, then automate everything with workers and machines.
 
-## Pętla rozgrywki i sterowanie
+- **Hook:** fragile parcels pay three times more, but they break when you carry more than three of them or run. The same risk-taking fun as Fragile Van, only in a different genre.
+- **Gap on Poki:** the tycoon and idle categories are full of food, shop, mine and farm games, but there is no sorting depot or courier company among them. On phones the theme has a few proven games, so the loop is familiar while the subject is fresh on Poki ([Idle](https://poki.com/en/idle), [Tycoon](https://poki.com/en/tycoon)).
+- **Shared brand:** the same van, the same parcels and the same "Fragile" name as the first game. Players searching for the brand on Google are traffic whose revenue stays with us in full ([Deal Types](https://sdk.poki.com/deals)).
+- **Audience:** ages 8–16 and casual adults. The satisfaction of growing parcel stacks, filling racks and departing vans.
+- **Role in the portfolio:** the main money-maker. The longest sessions, the most natural places for rewarded ads, and players come back to their saved depot.
 
-Wszystko dzieje się przez chodzenie: wejście w strefę stacji samo przenosi paczki albo pieniądze, bez klikania. To ta sama zasada co w Monkey Mart, więc gracz rozumie ją w kilka sekund.
+## Gameplay loop and controls
 
-1. **Rozładunek:** ciężarówka zrzuca paczki na taśmę. Każda paczka ma kolor dzielnicy, do której jedzie.
-2. **Zbieranie:** gracz podchodzi do końca taśmy i paczki same wskakują mu na stos, do limitu udźwigu (na start 6).
-3. **Sortowanie:** przy regale w danym kolorze paczki tego koloru same schodzą ze stosu.
-4. **Załadunek:** z regału gracz niesie paczki do vana swojej dzielnicy. Pełny van odjeżdża i zostawia na podłodze stos monet.
-5. **Zbieranie pieniędzy:** przejście przez stos monet.
-6. **Rozbudowa:** stanie na polu z ceną powoli pobiera monety, aż stacja, pracownik albo ulepszenie się odblokuje.
+Everything happens by walking: stepping into a station's zone moves parcels or money by itself, with no clicking. It is the same rule as in Monkey Mart, so players understand it within seconds.
 
-**Kruche paczki (od 3. minuty gry):**
+1. **Unloading:** a truck drops parcels onto the belt. Each parcel has the colour of the district it is going to.
+2. **Picking up:** the player walks to the end of the belt and parcels jump onto their stack, up to the carry limit (6 at the start).
+3. **Sorting:** at the rack of a given colour, parcels of that colour leave the stack by themselves.
+4. **Loading:** from the rack the player carries parcels to the van of their district. A full van drives off and leaves a pile of coins on the floor.
+5. **Collecting money:** walking over the coin pile.
+6. **Expansion:** standing on a price tag slowly takes coins until a station, worker or upgrade unlocks.
 
-- Mają ikonę szkła i płacą trzy razy więcej.
-- Stos z kruchą paczką zaczyna się chwiać, gdy ma więcej niż 3 sztuki albo gdy gracz biegnie dłużej niż 2 sekundy. Pasek chybotania nad głową ostrzega zawczasu.
-- Pełny pasek to pęknięcie górnej kruchej paczki: dźwięk szkła, odłamki, zero wypłaty za nią.
+**Fragile parcels (from minute 3 of play):**
 
-**Sterowanie:**
+- They have a glass icon and pay three times more.
+- A stack with a fragile parcel starts to wobble when it holds more than 3 parcels or when the player runs for longer than 2 seconds. A wobble bar above the head warns in advance.
+- A full bar breaks the top fragile parcel: a glass sound, shards, and no payout for it.
 
-- **Desktop:** WASD lub strzałki to bieg. Przytrzymany Shift to ostrożny chód, bez chybotania.
-- **Mobile:** wirtualny joystick w dowolnym miejscu ekranu. Małe wychylenie to chód, pełne to bieg.
-- Esc lub spacja: pauza.
+**Controls:**
 
-**Kamera:** widok z góry pod lekkim kątem, śledzi gracza. Przy odblokowaniu nowej strefy na chwilę pokazuje, co się pojawiło.
+- **Desktop:** WASD or arrows to run. Holding Shift walks carefully, without wobble.
+- **Mobile:** a virtual joystick anywhere on the screen. A small tilt walks, a full tilt runs.
+- Esc or Space: pause.
 
-## Stacje, pracownicy, progresja i ekonomia
+**Camera:** top-down at a slight angle, following the player. When a new zone unlocks it briefly shows what appeared.
 
-MVP ma trzy lokacje, każda na około 20 minut gry. Po zamknięciu lokacji gracz przenosi się do większej, z wyższymi stawkami za paczkę.
+## Stations, workers, progression and economy
 
-| Lokacja | Dzielnice | Mnożnik stawki | Nowy element |
+The MVP has three locations, each for about 20 minutes of play. After finishing a location the player moves to a bigger one with higher pay per parcel.
+
+| Location | Districts | Pay multiplier | New element |
 | --- | --- | --- | --- |
-| Poczta osiedlowa | 2 | ×1 | Kruche paczki |
-| Sortownia miejska | 4 | ×4 | Paczki ekspresowe z licznikiem czasu, premia +50% |
-| Hub regionalny | 6 | ×15 | Paczki XXL: gracz niesie tylko jedną naraz |
+| Local post office | 2 | ×1 | Fragile parcels |
+| City sorting centre | 4 | ×4 | Express parcels with a timer, +50% bonus |
+| Regional hub | 6 | ×15 | XXL parcels: the player carries only one at a time |
 
-**Ulepszenia w każdej lokacji:**
+**Upgrades in every location:**
 
-- **Gracz:** udźwig (od 6 do 20 paczek), szybkość, stabilność stosu z kruchymi paczkami.
-- **Pracownicy:** sortowacz (taśma na regał), ładowacz (regał do vana), zbieracz monet. Każdy ma własne ulepszenia udźwigu i szybkości.
-- **Stacje:** nowe regały i dzielnice, szybsza taśma, drugi van na dzielnicę, większa pojemność vana (od 8 do 20).
+- **Player:** carry capacity (6 to 20 parcels), speed, stability of a stack with fragile parcels.
+- **Workers:** sorter (belt to rack), loader (rack to van), coin collector. Each has its own capacity and speed upgrades.
+- **Stations:** new racks and districts, a faster belt, a second van per district, bigger van capacity (8 to 20).
 
-**Ekonomia (wartości startowe):**
+**Economy (starting values):**
 
 ```latex
-W = 5 \cdot M_{lok} \cdot (3 \text{ dla kruchej}) \qquad C_k = C_0 \cdot 1{,}35^{k}
+W = 5 \cdot M_{loc} \cdot (3 \text{ if fragile}) \qquad C_k = C_0 \cdot 1.35^{k}
 ```
 
-W to wypłata za paczkę, a C to koszt k-tego poziomu danego ulepszenia. Koszty bazowe C₀ w pierwszej lokacji: udźwig 30, szybkość 40, nowa dzielnica 100, pracownik 150.
+W is the payout per parcel and C the cost of level k of an upgrade. Base costs C₀ in the first location: capacity 30, speed 40, new district 100, worker 150.
 
-**Cele tempa (sprawdzane symulatorem):** pierwsza nowa dzielnica po około 90 s, pierwszy pracownik po około 3 min, pełna automatyzacja pierwszej lokacji po około 12 min, przejście do drugiej po około 20 min.
+**Pacing targets (checked with the simulator):** first new district after about 90 s, first worker after about 3 min, full automation of the first location after about 12 min, moving to the second one after about 20 min.
 
-**Zarobek offline:** gdy wszystkie ogniwa lokacji mają pracowników, po powrocie gracz dostaje zarobek za czas nieobecności: połowa stawki automatów, maksymalnie 2 godziny. To główny powód do codziennych powrotów.
+**Offline earnings:** when every link of a location is staffed, a returning player gets earnings for the time away: half the automation rate, at most 2 hours. The main reason to come back every day.
 
-## Monetyzacja
+## Monetisation
 
-Gra toczy się bez przerw, więc reklamy opieramy głównie na rewarded w strefach na podłodze, które gracz sam wybiera. commercialBreak dajemy tylko tam, gdzie gracz wraca do gry z ekranu.
+The game flows without breaks, so ads rely mainly on rewarded floor zones that the player chooses to step on. commercialBreak is used only where the player returns to play from a screen.
 
-**commercialBreak** przy powrocie do gry: zamknięcie pauzy, "Odbierz" na ekranie zarobku offline, "Kontynuuj" po przejściu do nowej lokacji. Nigdy przy otwieraniu ekranów. Pierwsze 5 minut bez reklam.
+**commercialBreak** when returning to play: closing the pause screen, "Collect" on the offline earnings screen, "Continue" after moving to a new location. Never when opening screens. No ads in the first 5 minutes.
 
 **rewardedBreak:**
 
-| Miejsce | Nagroda | Rozmiar | Zwykła alternatywa |
+| Place | Reward | Size | Normal alternative |
 | --- | --- | --- | --- |
-| Ekran powrotu | Zarobek offline ×2 | medium | Odbierz (zielony) |
-| Pole ulepszenia, za mało monet | Ulepszenie od razu, gdy brakuje najwyżej połowy ceny | medium | Gracz odchodzi z pola |
-| Pole "Turbo" pojawiające się co około 3 min | Podwójne wypłaty przez 3 min | medium | Gracz odchodzi z pola |
-| Pole "Pomocnik" | Dodatkowy pracownik na 3 min | small | Gracz odchodzi z pola |
-| Nowa lokacja | Podwójne monety na start | large | Kontynuuj (zielony) |
+| Return screen | Offline earnings ×2 | medium | Collect (green) |
+| Upgrade pad, not enough coins | The upgrade right away, when at most half the price is missing | medium | The player walks off the pad |
+| "Turbo" zone appearing about every 3 min | Double payouts for 3 min | medium | The player walks off the zone |
+| "Helper" zone | An extra worker for 3 min | small | The player walks off the zone |
+| New location | Double starting coins | large | Continue (green) |
 
-**Zasady Poki jak w pozostałych grach:** na ekranach wyboru zwykły przycisk jest zielony, nie mniejszy i widoczny jednocześnie. Przycisk i pole z reklamą mają ikonę 🎬 i nie są zielone. Pole z reklamą pokazuje przed wejściem, co da, a reklama rusza dopiero po 1 s stania w nim. Nagroda działa od razu i tylko po udanym obejrzeniu. W trakcie reklamy gra jest zatrzymana, dźwięk wyciszony, a sterowanie zablokowane.
+**Poki rules as in our other games:** on choice screens the normal button is green, no smaller and shown at the same time. Ad buttons and zones carry the 🎬 icon and are not green. An ad zone shows what it gives before you step in, and the ad starts only after standing in it for 1 s. The reward applies immediately and only after a completed ad. During an ad the game is paused, audio muted and input blocked.
 
-## Cele metryk Poki
+## Poki metric targets
 
-To gra o zarządzaniu, więc mierzymy ją według poprzeczki Poki dla tego gatunku: ponad 10 minut średniego czasu gry.
+This is a management game, so we measure it against Poki's bar for the genre: more than 10 minutes of average playtime.
 
-| Metryka | Próg Poki | Nasz cel | Główna dźwignia |
+| Metric | Poki threshold | Our target | Main lever |
 | --- | --- | --- | --- |
-| Średni czas gry (Player Fit) | > 3 min | 12+ min | Tempo odblokowań, kruche paczki, kolejne lokacje |
-| Sesje powyżej 3 min | ≥ 25% | ≥ 55% | Pierwszy zakup w ciągu 30 s, pierwszy pracownik po 3 min |
-| Konwersja do gry (Web Fit) | zalecane 65%+ | 75%+ | Gracz stoi przy taśmie od razu, bez menu |
-| Rozmiar startowy | < 8 MB | < 4 MB | Postacie, paczki i magazyn rysowane kodem |
-| Reklamy na DAU (soft release) | ≥ 1 | 2+ | Zarobek offline ×2, pola Turbo i ulepszeń |
+| Average playtime (Player Fit) | > 3 min | 12+ min | Unlock pacing, fragile parcels, further locations |
+| Sessions over 3 min | ≥ 25% | ≥ 55% | First purchase within 30 s, first worker at 3 min |
+| Conversion to play (Web Fit) | 65%+ recommended | 75%+ | The player stands at the belt right away, no menu |
+| Initial size | < 8 MB | < 4 MB | Characters, parcels and depot drawn in code |
+| Ads per DAU (soft release) | ≥ 1 | 2+ | Offline earnings ×2, Turbo and upgrade zones |
 
-**Najważniejsze w nagraniach playtestów:** czy gracz sam odkrywa, że chodzenie przenosi paczki, i czy kruche paczki bawią, czy frustrują. Jeśli frustrują, podnosimy limit stosu z 3 do 4, zanim zmienimy cokolwiek innego.
+**What matters most in playtest recordings:** whether players discover on their own that walking moves parcels, and whether fragile parcels are fun or frustrating. If they frustrate, we raise the stack limit from 3 to 4 before changing anything else.
 
-Źródła: [How testing works](https://developers.poki.com/guide/how-testing-works), [Release Process](https://sdk.poki.com/releaseprocess).
+Sources: [How testing works](https://developers.poki.com/guide/how-testing-works), [Release Process](https://sdk.poki.com/releaseprocess).
 
-## Technologia i architektura
+## Technology and architecture
 
-Stos jak w pozostałych grach: TypeScript, Vite, PixiJS v8 i poki-kit. Z Fragile Van bierzemy dodatkowo kod rysujący vana i paczki, żeby marka wyglądała spójnie.
+The same stack as our other games: TypeScript, Vite, PixiJS v8 and poki-kit. From Fragile Van we also take the code that draws the van and parcels, so the brand looks consistent.
 
-**Kluczowa decyzja:** symulacja magazynu to czysty moduł TypeScript ze stałym krokiem, niezależny od renderu. Ten sam moduł napędza trzy rzeczy: grę, bezgłowy symulator tempa oraz wyliczenie zarobku offline z przepustowości automatów.
+**Key decision:** the depot simulation is a pure TypeScript module with a fixed step, independent of rendering. The same module drives three things: the game, the headless pacing simulator and the offline earnings estimate from the automation throughput.
 
-**Struktura kodu**
+**Code structure**
 
-- `src/sim` — `Warehouse`, `Station` (taśma, regał, rampa vana, pole zakupu), `Carrier` (wspólny dla gracza i pracowników: stos, udźwig, chybotanie), `Worker` (automat stanów: idź po paczki, weź, idź do celu, odłóż), `Economy`, `Offline`.
-- `src/game` — render z góry z sortowaniem po osi Y, stos paczek z animacją chybotania, joystick, kamera, efekty monet i odłamków.
-- `src/ui` — HUD z monetami, pauza, ekran powrotu z zarobkiem offline, przejście między lokacjami.
-- `locations/*.json` — układ lokacji: strefy, stacje, pola zakupu w kolejności odblokowań, ceny bazowe.
-- `tools/pacing-sim` — skrypt Node, w którym prosty bot gra zachłannie (kupuje najtańsze dostępne ulepszenie) i wypisuje czas do każdego kamienia milowego z sekcji o ekonomii.
+- `src/sim` — `Warehouse`, `Station` (belt, rack, van dock, buy pad), `Carrier` (shared by the player and workers: stack, capacity, wobble), `Worker` (state machine: go for parcels, take, go to the target, drop), `Economy`, `Offline`.
+- `src/game` — top-down rendering sorted by Y, a parcel stack with wobble animation, joystick, camera, coin and shard effects.
+- `src/ui` — HUD with coins, pause, the return screen with offline earnings, moving between locations.
+- `locations/*.json` — location layout: zones, stations, buy pads in unlock order, base prices.
+- `tools/pacing-sim` — a Node script in which a simple bot plays greedily (buys the cheapest available upgrade) and prints the time to each milestone from the economy section.
 
-**Ruch pracowników:** układ lokacji jest otwarty, więc wystarczy graf punktów drogi zdefiniowany w JSON-ie zamiast pełnego wyszukiwania ścieżek.
+**Worker movement:** the location layout is open, so a graph of waypoints defined in JSON is enough instead of full pathfinding.
 
-**Zapis postępu:** lokacja, odblokowane stacje, poziomy ulepszeń, pracownicy, monety, znacznik czasu dla zarobku offline, ustawienia. Zapis co 10 s i przy każdym zakupie, w try/catch, z wersją schematu.
+**Saving:** location, unlocked stations, upgrade levels, workers, coins, a timestamp for offline earnings, settings. Saved every 10 s and on every purchase, in try/catch, with a schema version.
 
-**Języki:** słownik od pierwszego dnia. Interfejs opiera się na ikonach i liczbach, więc tekstu jest bardzo mało.
+**Languages:** a dictionary from day one. The interface relies on icons and numbers, so there is very little text.
 
-## Zakres MVP i harmonogram
+## MVP scope and schedule
 
-Pierwszą lokację (Poczta osiedlowa) wysyłamy do playtestów około 12. dnia. Dwie kolejne dobudowujemy w trakcie testów, bo Player Fit mierzy głównie pierwsze minuty gry.
+The first location (Local post office) goes to playtests around day 12. The other two are built during testing, because Player Fit mostly measures the first minutes of play.
 
-1. **Dni 1–3:** poki-kit i kod vana z Fragile Van, `src/sim` z taśmą, regałami, rampą vana i polami zakupu, gracz ze stosem i joystickiem.
-2. **Dni 4–7:** pracownicy (automat stanów, graf punktów drogi), ekonomia, symulator tempa i pierwsze strojenie do celów tempa.
-3. **Dni 8–12:** kruche paczki z chybotaniem, pełna Poczta osiedlowa, zapis, zarobek offline, SDK, dźwięki. Upload, 10 nagrań z playtestów, pierwszy Player Fit.
-4. **Dni 13–20:** poprawki z nagrań (najpierw pierwsze 3 minuty), Sortownia miejska z paczkami ekspresowymi, Hub regionalny z paczkami XXL, rewarded.
-5. **Dni 21–24:** miniatura statyczna i animowana (van i chwiejący się stos kruchych paczek), tłumaczenia, rozmiar, drugi Player Fit, zgłoszenie do Web Fit.
+1. **Days 1–3:** poki-kit and van code from Fragile Van, `src/sim` with the belt, racks, van dock and buy pads, the player with a stack and joystick.
+2. **Days 4–7:** workers (state machine, waypoint graph), economy, pacing simulator and first tuning to the pacing targets.
+3. **Days 8–12:** fragile parcels with wobble, the complete Local post office, saving, offline earnings, SDK, sounds. Upload, 10 playtest recordings, first Player Fit.
+4. **Days 13–20:** fixes from the recordings (first 3 minutes first), City sorting centre with express parcels, Regional hub with XXL parcels, rewarded ads.
+5. **Days 21–24:** static and animated thumbnail (a van and a wobbling stack of fragile parcels), translations, size, second Player Fit, Web Fit submission.
 
-**Poza MVP:** port lotniczy cargo z dronami jako czwarta lokacja, sezonowe paczki (święta, Halloween), skórki postaci.
+**Beyond the MVP:** a cargo airport with drones as a fourth location, seasonal parcels (Christmas, Halloween), character skins.
 
-**Czego nie robimy w MVP:** trybu wieloosobowego, prestiżu z trwałymi bonusami, trójwymiarowej grafiki.
+**Not in the MVP:** multiplayer, prestige with permanent bonuses, 3D graphics.
 
-## Prompt startowy dla Claude Code
+## Starting prompt for Claude Code
 
-Przed startem wyeksportuj ten dokument do `docs/DESIGN.md` i podaj ścieżkę do repozytorium Fragile Van (poki-kit oraz kod vana i paczek). Prompt obejmuje etap 1: rdzeń magazynu i gracza.
+Before starting, export this document to `docs/DESIGN.md` and give the path to the Fragile Van repository (poki-kit and the van and parcel code). The prompt covers stage 1: the depot core and the player.
 
 ```markdown
-Budujesz przeglądarkową grę "Fragile Express" (tycoon sortowni paczek w stylu Monkey Mart) na platformę Poki.com. To druga gra w świecie "Fragile" po Fragile Van. Jesteś jedynym programistą, ja jestem projektantem i testuję buildy.
+You are building a browser game "Fragile Express" (a parcel sorting depot tycoon in the style of Monkey Mart) for Poki.com. It is the second game in the "Fragile" world after Fragile Van. You are the only programmer; I am the designer and I test the builds.
 
-## Źródło prawdy
-Pełny dokument projektowy jest w `docs/DESIGN.md`. Przeczytaj go w całości przed pierwszą linijką kodu. Jeśli czegoś brakuje albo coś jest sprzeczne, zapytaj zamiast zgadywać.
+## Source of truth
+The full design document is in `docs/DESIGN.md`. Read all of it before the first line of code. If something is missing or contradictory, ask instead of guessing.
 
-## Gra w skrócie
-- Widok z góry. Gracz chodzi po magazynie; wejście w strefę stacji samo przenosi paczki lub monety, bez klikania.
-- Taśma rozładunkowa wypuszcza paczki w kolorach dzielnic. Gracz zbiera je w stos (udźwig na start 6), odkłada na regał swojego koloru, potem niesie do vana tej dzielnicy. Pełny van odjeżdża i zostawia stos monet.
-- Stanie na polu z ceną powoli pobiera monety i odblokowuje stację, pracownika lub ulepszenie.
-- Kruche paczki: płacą ×3; stos z kruchą paczką chybocze, gdy ma ponad 3 sztuki albo gracz biegnie dłużej niż 2 s. Pełny pasek chybotania = pęka górna krucha paczka.
-- Pracownicy (sortowacz, ładowacz, zbieracz monet) to ten sam `Carrier` co gracz, sterowany automatem stanów.
-- Wypłata: 5 × mnożnik lokacji (×3 dla kruchej). Koszt k-tego poziomu ulepszenia: C₀ × 1,35^k. Wartości startowe do strojenia.
-- Sterowanie: WASD/strzałki = bieg, Shift = ostrożny chód; na dotyku joystick w dowolnym miejscu (małe wychylenie chód, pełne bieg). Esc lub spacja = pauza.
+## The game in short
+- Top-down view. The player walks around the depot; stepping into a station's zone moves parcels or coins by itself, with no clicking.
+- The unloading belt releases parcels in district colours. The player picks them up into a stack (capacity 6 at the start), drops them on the rack of their colour, then carries them to that district's van. A full van drives off and leaves a pile of coins.
+- Standing on a price tag slowly takes coins and unlocks a station, worker or upgrade.
+- Fragile parcels: pay ×3; a stack with a fragile parcel wobbles when it holds more than 3 parcels or the player runs longer than 2 s. A full wobble bar = the top fragile parcel breaks.
+- Workers (sorter, loader, coin collector) are the same `Carrier` as the player, driven by a state machine.
+- Payout: 5 × location multiplier (×3 for fragile). Cost of upgrade level k: C₀ × 1.35^k. Starting values, to be tuned.
+- Controls: WASD/arrows = run, Shift = careful walk; on touch a joystick anywhere (small tilt walks, full tilt runs). Esc or Space = pause.
 
-## Stos (nie zmieniaj bez pytania)
-TypeScript strict, Vite, PixiJS v8, Vitest. Zero zapytań sieciowych poza skryptem Poki SDK. Postacie, paczki i magazyn rysowane kodem. Cel: build poniżej 4 MB.
+## Stack (do not change without asking)
+TypeScript strict, Vite, PixiJS v8, Vitest. No network requests besides the Poki SDK script. Characters, parcels and the depot drawn in code. Target: build under 4 MB.
 
-## Wspólny kod
-Z repozytorium Fragile Van (ścieżkę podam) skopiuj `src/core`, `src/poki` oraz kod rysujący vana i paczki. Nie zmieniaj API poki-kit. Jeśli czegoś brakuje, dopisz to tak, żeby dało się przenieść z powrotem.
+## Shared code
+From the Fragile Van repository (I will give the path) copy `src/core`, `src/poki` and the code that draws the van and parcels. Do not change the poki-kit API. If something is missing, add it so it can be ported back.
 
-## Twarde wymagania Poki
-- Obszar gry 16:9 (bazowo 1031×580) na desktopie; na telefonie pełny ekran w poziomie i w pionie.
-- `PokiSDK.init()` (gra startuje także przy błędzie), `gameLoadingFinished()` po załadowaniu.
-- `gameplayStart()` przy pierwszym ruchu gracza, `gameplayStop()` przy pauzie i ekranach. Nigdy dwa takie same z rzędu, żadnych zdarzeń w trakcie reklamy.
-- `commercialBreak()` tylko przy powrocie do gry z ekranu (pauza, zarobek offline, nowa lokacja), przed `gameplayStart()`. Pierwsze 5 minut bez reklam. Bez własnych liczników.
-- `rewardedBreak({ size })`: nagroda tylko przy `success === true`. Na ekranach wyboru zwykły przycisk zielony, nie mniejszy, widoczny jednocześnie; przycisk i pole z reklamą z ikoną 🎬, nie zielone. Pole z reklamą startuje po 1 s stania w nim.
-- W trakcie reklamy gra zatrzymana, dźwięk wyciszony, sterowanie zablokowane. localStorage w try/catch. Blokada przewijania strony.
-- Żadnych linków zewnętrznych, ekranów powitalnych, obcych reklam ani zakupów.
+## Hard Poki requirements
+- 16:9 game area (base 1031×580) on desktop; full screen on phones in landscape and portrait.
+- `PokiSDK.init()` (the game starts even if it fails), `gameLoadingFinished()` after loading.
+- `gameplayStart()` on the player's first move, `gameplayStop()` on pause and screens. Never two identical in a row, no events during an ad.
+- `commercialBreak()` only when returning to play from a screen (pause, offline earnings, new location), before `gameplayStart()`. No ads in the first 5 minutes. No timers of our own.
+- `rewardedBreak({ size })`: reward only when `success === true`. On choice screens the normal button is green, no smaller, shown at the same time; ad buttons and zones carry 🎬 and are not green. An ad zone starts after standing in it for 1 s.
+- During an ad the game is paused, audio muted and input blocked. localStorage in try/catch. Page scrolling blocked.
+- No external links, splash screens, third-party ads or purchases.
 
-## Architektura
-- `src/sim`: czysty TypeScript, stały krok, zero zależności od renderu (`Warehouse`, `Station`, `Carrier`, `Worker`, `Economy`, `Offline`). Emituje zdarzenia do renderu.
-- `src/game`: render z sortowaniem po Y, stos z chybotaniem, joystick, kamera, efekty.
-- `src/ui`: HUD, pauza, ekran powrotu, przejście lokacji.
-- `locations/*.json`: strefy, stacje, pola zakupu w kolejności odblokowań, graf punktów drogi, ceny bazowe.
-- `tools/pacing-sim`: skrypt Node z botem kupującym zachłannie najtańsze ulepszenie.
+## Architecture
+- `src/sim`: pure TypeScript, fixed step, no rendering dependencies (`Warehouse`, `Station`, `Carrier`, `Worker`, `Economy`, `Offline`). Emits events to the renderer.
+- `src/game`: rendering sorted by Y, the stack with wobble, joystick, camera, effects.
+- `src/ui`: HUD, pause, return screen, location transitions.
+- `locations/*.json`: zones, stations, buy pads in unlock order, waypoint graph, base prices.
+- `tools/pacing-sim`: a Node script with a bot that greedily buys the cheapest upgrade.
 
-## Zadanie teraz: etap 1
-1. Zainicjuj projekt i skopiuj wspólny kod.
-2. `src/sim` z testami: taśma, stos z limitem udźwigu, regały po kolorach, van z pojemnością i odjazdem, stos monet, pola zakupu pobierające monety w czasie.
-3. Gracz z joystickiem i klawiaturą, kamera, render lokacji "Poczta osiedlowa" z 2 dzielnicami z pliku JSON.
-4. Jeden typ pracownika (sortowacz) na automacie stanów po grafie punktów drogi.
-5. `tools/pacing-sim`: wypisuje czas do pierwszej nowej dzielnicy, pierwszego pracownika i pełnej automatyzacji. Porównaj z celami tempa z dokumentu (90 s, 3 min, 12 min) i zaproponuj poprawki cen.
+## Task now: stage 1
+1. Initialise the project and copy the shared code.
+2. `src/sim` with tests: belt, stack with a carry limit, racks by colour, a van with capacity and departure, coin pile, buy pads that take coins over time.
+3. The player with joystick and keyboard, camera, rendering of the "Local post office" location with 2 districts from the JSON file.
+4. One worker type (sorter) on a state machine over the waypoint graph.
+5. `tools/pacing-sim`: prints the time to the first new district, the first worker and full automation. Compare with the pacing targets in the document (90 s, 3 min, 12 min) and propose price changes.
 
-## Definicja ukończenia etapu 1
-- Testy symulacji przechodzą, symulator tempa daje czytelny raport.
-- Pętla taśma → regał → van → monety → zakup działa na desktopie i na telefonie, 60 FPS przy 4-krotnym spowolnieniu CPU w Chrome.
-- Krótki raport: co działa, wyniki symulatora, plan na etap 2. Nie zaczynaj etapu 2 bez mojej zgody.
+## Definition of done for stage 1
+- Simulation tests pass, the pacing simulator gives a readable report.
+- The belt → rack → van → coins → purchase loop works on desktop and phone, 60 FPS with 4× CPU slowdown in Chrome.
+- A short report: what works, simulator results, plan for stage 2. Do not start stage 2 without my approval.
 
-## Sposób pracy
-Najpierw plan w punktach, potem kod. Małe commity. Kod i komentarze po angielsku, teksty tylko przez słownik i18n. Jeśli coś w projekcie wydaje ci się złe dla gracza, powiedz to wprost.
+## Way of working
+Plan in points first, then code. Small commits. Code and comments in English, texts only through the i18n dictionary. If something in the design seems bad for the player, say so plainly.
 ```
