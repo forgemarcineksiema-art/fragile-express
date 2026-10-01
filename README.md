@@ -19,7 +19,7 @@ Research on genre and platform practices: [docs/RESEARCH.md](docs/RESEARCH.md).
 | ![A courier at the front door with his order card](docs/screenshots/courier.jpg) | ![A tall stack with fragile and express parcels and the MAX tag](docs/screenshots/stack.jpg) |
 | Courier orders: player-only jobs that pay ×4 | A full stack (MAX) of fragile, express and normal parcels |
 | ![The regional hub at sunset with six districts and two belts](docs/screenshots/hub_sunset.jpg) | ![Every role from the front, side and back](docs/screenshots/characters.jpg) |
-| Regional hub at sunset: six districts, two belts | The crew: courier, sorter, loader, cash collector, helper |
+| Regional hub at sunset: six districts, two belts | The crew from the front, side and back: player, sorter, loader, cash collector, helper |
 
 ## Run
 
