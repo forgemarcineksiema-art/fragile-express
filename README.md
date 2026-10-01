@@ -6,6 +6,20 @@ price tags to buy upgrades, districts and workers until the depot runs itself. F
 break when the stack is taller than 3 or you run too long.
 
 Design document: [docs/DESIGN.md](docs/DESIGN.md). Stage report: [docs/REPORT.md](docs/REPORT.md).
+Research on genre and platform practices: [docs/RESEARCH.md](docs/RESEARCH.md).
+
+## Screenshots
+
+![The post office a few minutes in: workers sort and load while the player runs the loop](docs/screenshots/poczta.jpg)
+
+| | |
+| --- | --- |
+| ![The whole post office with its street, car parks and loading yard](docs/screenshots/poczta_overview.jpg) | ![The same depot at night: the warehouse stays lit, lamps and headlights glow outside](docs/screenshots/poczta_night.jpg) |
+| Post office from above: street, car parks, loading yard | Night: the depot stays lit, lamps and headlights outside |
+| ![A courier at the front door with his order card](docs/screenshots/courier.jpg) | ![A tall stack with fragile and express parcels and the MAX tag](docs/screenshots/stack.jpg) |
+| Courier orders: player-only jobs that pay ×4 | A full stack (MAX) of fragile, express and normal parcels |
+| ![The regional hub at sunset with six districts and two belts](docs/screenshots/hub_sunset.jpg) | ![Every role from the front, side and back](docs/screenshots/characters.jpg) |
+| Regional hub at sunset: six districts, two belts | The crew: courier, sorter, loader, cash collector, helper |
 
 ## Run
 
@@ -22,7 +36,7 @@ every purchase.
 
 ## Controls
 
-- Desktop: WASD or arrows to run, hold Shift to walk carefully (no wobble). Esc, Space or P pauses.
+- Desktop: WASD or arrows to run, hold Shift (or toggle with C) to walk carefully (no wobble). Esc, Space or P pauses.
 - Touch or mouse: press anywhere and drag. A small tilt walks carefully, a full tilt runs.
 - Walking into a station moves parcels or coins by itself. Standing still on a price tag pays for it.
 
